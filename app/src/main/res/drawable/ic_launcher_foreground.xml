@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Grid of dots representing time -->
+    <!-- Row 1 - elapsed (dimmed) -->
+    <path android:fillColor="#3A3A3A" android:pathData="M30,34m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#3A3A3A" android:pathData="M42,34m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#3A3A3A" android:pathData="M54,34m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#3A3A3A" android:pathData="M66,34m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#3A3A3A" android:pathData="M78,34m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+
+    <!-- Row 2 - elapsed -->
+    <path android:fillColor="#3A3A3A" android:pathData="M30,46m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#3A3A3A" android:pathData="M42,46m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <!-- Current indicator (red) -->
+    <path android:fillColor="#FF3B30" android:pathData="M54,46m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <!-- Remaining (white) -->
+    <path android:fillColor="#FFFFFF" android:pathData="M66,46m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M78,46m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+
+    <!-- Row 3 - remaining -->
+    <path android:fillColor="#FFFFFF" android:pathData="M30,58m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M42,58m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M54,58m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M66,58m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M78,58m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+
+    <!-- Row 4 - remaining -->
+    <path android:fillColor="#FFFFFF" android:pathData="M30,70m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M42,70m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M54,70m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M66,70m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M78,70m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+
+</vector>

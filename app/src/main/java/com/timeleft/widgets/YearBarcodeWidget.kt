@@ -1,0 +1,129 @@
+package com.timeleft.widgets
+
+import android.content.Context
+import android.graphics.Bitmap
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.glance.GlanceId
+import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.provideContent
+import androidx.glance.background
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
+import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
+import androidx.glance.layout.padding
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
+import androidx.glance.color.ColorProvider
+import com.timeleft.util.TimeCalculations
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+class YearBarcodeWidget : GlanceAppWidget() {
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val totalDays = TimeCalculations.totalDaysInYear()
+        val elapsed = TimeCalculations.daysElapsedInYear()
+        val remaining = TimeCalculations.daysLeftInYear()
+        val dateText = LocalDate.now().format(DateTimeFormatter.ofPattern("EEE d MMM yyyy"))
+        val percent = (elapsed.toFloat() / totalDays * 100).toInt()
+
+        val barcodeBitmap = WidgetRenderer.renderBarcode(
+            width = 800,
+            height = 200,
+            totalUnits = totalDays,
+            elapsedUnits = elapsed,
+            elapsedColor = 0xFF3A3A3A.toInt(),
+            remainingColor = 0xFFFFFFFF.toInt(),
+            currentColor = 0xFFFF3B30.toInt(),
+            backgroundColor = 0xFF000000.toInt()
+        )
+
+        provideContent {
+            BarcodeWidgetContent(
+                dateText = dateText,
+                remaining = remaining,
+                percent = percent,
+                barcodeBitmap = barcodeBitmap
+            )
+        }
+    }
+}
+
+@Composable
+private fun BarcodeWidgetContent(
+    dateText: String,
+    remaining: Int,
+    percent: Int,
+    barcodeBitmap: Bitmap
+) {
+    Box(
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .background(ColorProvider(Color.Black, Color.Black))
+            .padding(12.dp)
+    ) {
+        Column(
+            modifier = GlanceModifier.fillMaxSize(),
+            verticalAlignment = Alignment.Top
+        ) {
+            Row(
+                modifier = GlanceModifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = dateText,
+                    style = TextStyle(
+                        color = ColorProvider(Color.White, Color.White),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    modifier = GlanceModifier.defaultWeight()
+                )
+                Text(
+                    text = "$percent%",
+                    style = TextStyle(
+                        color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
+                        fontSize = 12.sp
+                    )
+                )
+            }
+
+            Spacer(modifier = GlanceModifier.height(2.dp))
+
+            Text(
+                text = "$remaining days left",
+                style = TextStyle(
+                    color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
+                    fontSize = 11.sp
+                )
+            )
+
+            Spacer(modifier = GlanceModifier.height(8.dp))
+
+            Image(
+                provider = ImageProvider(barcodeBitmap),
+                contentDescription = "Year progress barcode",
+                modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                contentScale = ContentScale.FillBounds
+            )
+        }
+    }
+}
+
+class YearBarcodeWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = YearBarcodeWidget()
+}

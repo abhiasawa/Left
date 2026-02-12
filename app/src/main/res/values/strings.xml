@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TimeLeft</string>
+    <string name="widget_year_progress_name">Year Progress</string>
+    <string name="widget_year_progress_description">Shows year progress as a dot grid</string>
+    <string name="widget_year_barcode_name">Year Barcode</string>
+    <string name="widget_year_barcode_description">Shows year progress as a barcode visualization</string>
+    <string name="widget_month_progress_name">Month Progress</string>
+    <string name="widget_month_progress_description">Shows month progress as a dot grid</string>
+    <string name="widget_life_progress_name">Life Progress</string>
+    <string name="widget_life_progress_description">Shows life progress as a dot grid</string>
+    <string name="widget_countdown_name">Countdown</string>
+    <string name="widget_countdown_description">Shows countdown to your custom date</string>
+    <string name="widget_day_hour_name">Day / Hour</string>
+    <string name="widget_day_hour_description">Shows hours left today</string>
+</resources>

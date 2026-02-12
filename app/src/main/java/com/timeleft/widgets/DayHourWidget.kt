@@ -1,0 +1,133 @@
+package com.timeleft.widgets
+
+import android.content.Context
+import android.graphics.Bitmap
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.glance.GlanceId
+import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.provideContent
+import androidx.glance.background
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
+import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
+import androidx.glance.layout.padding
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
+import androidx.glance.color.ColorProvider
+import com.timeleft.util.TimeCalculations
+
+class DayHourWidget : GlanceAppWidget() {
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val totalHours = TimeCalculations.totalHoursInDay()
+        val elapsedHours = TimeCalculations.hoursElapsedInDay()
+        val remainingHours = TimeCalculations.hoursLeftInDay()
+        val dayLabel = TimeCalculations.dayLabel()
+
+        val totalMinutes = TimeCalculations.totalMinutesInHour()
+        val elapsedMinutes = TimeCalculations.minutesElapsedInHour()
+        val remainingMinutes = TimeCalculations.minutesLeftInHour()
+        val hourLabel = TimeCalculations.hourLabel()
+
+        val dayGridBitmap = WidgetRenderer.renderDotGrid(
+            width = 300,
+            height = 100,
+            totalUnits = totalHours,
+            elapsedUnits = elapsedHours,
+            elapsedColor = 0xFF3A3A3A.toInt(),
+            remainingColor = 0xFFFFFFFF.toInt(),
+            currentColor = 0xFFFF3B30.toInt(),
+            backgroundColor = 0xFF000000.toInt(),
+            columns = 8,
+            dotRadiusPx = 10f,
+            spacingPx = 6f
+        )
+
+        val hourGridBitmap = WidgetRenderer.renderDotGrid(
+            width = 300,
+            height = 120,
+            totalUnits = totalMinutes,
+            elapsedUnits = elapsedMinutes,
+            elapsedColor = 0xFF3A3A3A.toInt(),
+            remainingColor = 0xFFFFFFFF.toInt(),
+            currentColor = 0xFFFF3B30.toInt(),
+            backgroundColor = 0xFF000000.toInt(),
+            columns = 10,
+            dotRadiusPx = 6f,
+            spacingPx = 3f
+        )
+
+        provideContent {
+            DayHourWidgetContent(
+                dayLabel = dayLabel,
+                remainingHours = remainingHours,
+                hourLabel = hourLabel,
+                remainingMinutes = remainingMinutes,
+                dayGridBitmap = dayGridBitmap
+            )
+        }
+    }
+}
+
+@Composable
+private fun DayHourWidgetContent(
+    dayLabel: String,
+    remainingHours: Int,
+    hourLabel: String,
+    remainingMinutes: Int,
+    dayGridBitmap: Bitmap
+) {
+    Box(
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .background(ColorProvider(Color.Black, Color.Black))
+            .padding(12.dp)
+    ) {
+        Column(
+            modifier = GlanceModifier.fillMaxSize(),
+            verticalAlignment = Alignment.Top,
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = dayLabel,
+                style = TextStyle(
+                    color = ColorProvider(Color.White, Color.White),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+            Spacer(modifier = GlanceModifier.height(2.dp))
+            Text(
+                text = "$remainingHours hours left",
+                style = TextStyle(
+                    color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
+                    fontSize = 11.sp
+                )
+            )
+            Spacer(modifier = GlanceModifier.height(8.dp))
+            Image(
+                provider = ImageProvider(dayGridBitmap),
+                contentDescription = "Day progress",
+                modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                contentScale = ContentScale.Fit
+            )
+        }
+    }
+}
+
+class DayHourWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = DayHourWidget()
+}
