@@ -43,16 +43,14 @@ class YearProgressWidget : GlanceAppWidget() {
         val year = TimeCalculations.yearLabel()
 
         val gridBitmap = WidgetRenderer.renderDotGrid(
-            width = 400,
-            height = 300,
+            width = 800,
+            height = 500,
             totalUnits = totalDays,
             elapsedUnits = elapsed,
             elapsedColor = 0xFF3A3A3A.toInt(),
             remainingColor = 0xFFFFFFFF.toInt(),
             currentColor = 0xFFFF3B30.toInt(),
-            backgroundColor = 0xFF000000.toInt(),
-            dotRadiusPx = 5f,
-            spacingPx = 2.5f
+            backgroundColor = 0xFF000000.toInt()
         )
 
         provideContent {
@@ -76,7 +74,7 @@ private fun YearWidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(Color.Black, Color.Black))
-            .padding(12.dp)
+            .padding(8.dp)
     ) {
         Column(
             modifier = GlanceModifier.fillMaxSize(),
@@ -87,19 +85,18 @@ private fun YearWidgetContent(
                 text = year,
                 style = TextStyle(
                     color = ColorProvider(Color.White, Color.White),
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
             )
-            Spacer(modifier = GlanceModifier.height(2.dp))
             Text(
                 text = "$remaining days left",
                 style = TextStyle(
                     color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                    fontSize = 11.sp
+                    fontSize = 12.sp
                 )
             )
-            Spacer(modifier = GlanceModifier.height(8.dp))
+            Spacer(modifier = GlanceModifier.height(4.dp))
             Image(
                 provider = ImageProvider(gridBitmap),
                 contentDescription = "Year progress grid",

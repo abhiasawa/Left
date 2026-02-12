@@ -4,10 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
-import android.graphics.Typeface
 import kotlin.math.ceil
-import kotlin.math.cos
-import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Renders bitmap-based visual representations (dot grids, barcodes, progress rings)
@@ -20,7 +18,9 @@ object WidgetRenderer {
      * Renders a grid of dots where each dot represents one time unit.
      * Elapsed dots are dimmed, the current unit is highlighted, and remaining dots are bright.
      *
-     * @param columns If 0, columns are auto-calculated to fill the available width.
+     * When [columns] is 0, the optimal column count is calculated automatically
+     * to best fill the available bitmap area. When [dotRadiusPx] is 0, the dot
+     * radius is derived from the cell size (80% fill ratio) for a tight, elegant grid.
      */
     fun renderDotGrid(
         width: Int,
@@ -32,26 +32,35 @@ object WidgetRenderer {
         currentColor: Int,
         backgroundColor: Int,
         columns: Int = 0,
-        dotRadiusPx: Float = 8f,
-        spacingPx: Float = 4f
+        dotRadiusPx: Float = 0f,
+        spacingPx: Float = 0f
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(backgroundColor)
 
-        // Each cell = diameter + spacing; used to compute layout dimensions
-        val cellSize = dotRadiusPx * 2 + spacingPx
-        val effectiveColumns = if (columns > 0) columns else {
-            // Auto-fit as many columns as the width allows
-            ((width + spacingPx) / cellSize).toInt().coerceAtLeast(1)
-        }
+        if (totalUnits <= 0) return bitmap
 
-        val rows = ceil(totalUnits.toFloat() / effectiveColumns).toInt()
-        val gridWidth = effectiveColumns * cellSize - spacingPx
-        val gridHeight = rows * cellSize - spacingPx
+        val availW = width.toFloat()
+        val availH = height.toFloat()
+
+        // Determine column count: explicit or auto-optimized
+        val effectiveCols = if (columns > 0) columns else findOptimalColumns(availW, availH, totalUnits)
+        val rows = ceil(totalUnits.toFloat() / effectiveCols).toInt()
+
+        // Calculate cell size so the grid fills the bitmap
+        val cellW = availW / effectiveCols
+        val cellH = availH / rows
+        val cellSize = minOf(cellW, cellH)
+
+        // Dot radius: 40% of cell = 80% diameter fill ratio for tight packing
+        val effectiveRadius = if (dotRadiusPx > 0f) dotRadiusPx else cellSize * 0.40f
+
         // Center the grid within the bitmap
-        val offsetX = (width - gridWidth) / 2f
-        val offsetY = (height - gridHeight) / 2f
+        val gridW = effectiveCols * cellSize
+        val gridH = rows * cellSize
+        val offsetX = (availW - gridW) / 2f
+        val offsetY = (availH - gridH) / 2f
 
         val paint = Paint().apply {
             isAntiAlias = true
@@ -59,11 +68,11 @@ object WidgetRenderer {
         }
 
         for (i in 0 until totalUnits) {
-            val col = i % effectiveColumns
-            val row = i / effectiveColumns
+            val col = i % effectiveCols
+            val row = i / effectiveCols
 
-            val cx = offsetX + col * cellSize + dotRadiusPx
-            val cy = offsetY + row * cellSize + dotRadiusPx
+            val cx = offsetX + col * cellSize + cellSize / 2f
+            val cy = offsetY + row * cellSize + cellSize / 2f
 
             paint.color = when {
                 i == elapsedUnits -> currentColor
@@ -71,10 +80,48 @@ object WidgetRenderer {
                 else -> remainingColor
             }
 
-            canvas.drawCircle(cx, cy, dotRadiusPx, paint)
+            canvas.drawCircle(cx, cy, effectiveRadius, paint)
         }
 
         return bitmap
+    }
+
+    /**
+     * Finds the column count that maximizes space utilization for a grid of [totalUnits]
+     * dots within a [availW] x [availH] rectangle. Uses the mathematical optimum
+     * cols = sqrt(N * W/H) as a starting point and searches nearby values.
+     */
+    private fun findOptimalColumns(availW: Float, availH: Float, totalUnits: Int): Int {
+        val optimalCols = sqrt(totalUnits.toDouble() * availW / availH).toInt()
+            .coerceIn(1, totalUnits)
+
+        var bestCols = optimalCols
+        var bestScore = -1f
+
+        for (delta in -4..4) {
+            val cols = (optimalCols + delta).coerceIn(1, totalUnits)
+            val rows = ceil(totalUnits.toFloat() / cols).toInt()
+
+            val cellW = availW / cols
+            val cellH = availH / rows
+            val cell = minOf(cellW, cellH)
+
+            val gridW = cols * cell
+            val gridH = rows * cell
+            val utilization = (gridW * gridH) / (availW * availH)
+
+            // Penalize very sparse last rows (less than 25% full)
+            val lastRowCount = totalUnits % cols
+            val penalty = if (lastRowCount in 1 until (cols * 0.25f).toInt()) 0.15f else 0f
+
+            val score = utilization - penalty
+            if (score > bestScore) {
+                bestScore = score
+                bestCols = cols
+            }
+        }
+
+        return bestCols
     }
 
     /**

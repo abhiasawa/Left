@@ -52,17 +52,15 @@ class LifeProgressWidget : GlanceAppWidget() {
         } else lifespan
 
         val gridBitmap = WidgetRenderer.renderDotGrid(
-            width = 300,
-            height = 220,
+            width = 500,
+            height = 400,
             totalUnits = lifespan,
             elapsedUnits = yearsLived,
             elapsedColor = 0xFF3A3A3A.toInt(),
             remainingColor = 0xFFFFFFFF.toInt(),
             currentColor = 0xFFFF3B30.toInt(),
             backgroundColor = 0xFF000000.toInt(),
-            columns = 10,
-            dotRadiusPx = 8f,
-            spacingPx = 4f
+            columns = 10
         )
 
         provideContent {
@@ -86,7 +84,7 @@ private fun LifeWidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(Color.Black, Color.Black))
-            .padding(12.dp)
+            .padding(8.dp)
     ) {
         Column(
             modifier = GlanceModifier.fillMaxSize(),
@@ -97,19 +95,18 @@ private fun LifeWidgetContent(
                 text = "Life",
                 style = TextStyle(
                     color = ColorProvider(Color.White, Color.White),
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
             )
-            Spacer(modifier = GlanceModifier.height(2.dp))
             Text(
                 text = if (hasBirthDate) "$yearsRemaining years left" else "Set birth date in app",
                 style = TextStyle(
                     color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                    fontSize = 11.sp
+                    fontSize = 12.sp
                 )
             )
-            Spacer(modifier = GlanceModifier.height(8.dp))
+            Spacer(modifier = GlanceModifier.height(4.dp))
             Image(
                 provider = ImageProvider(gridBitmap),
                 contentDescription = "Life progress",

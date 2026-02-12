@@ -49,31 +49,27 @@ class DayHourWidget : GlanceAppWidget() {
         val hourLabel = TimeCalculations.hourLabel()
 
         val dayGridBitmap = WidgetRenderer.renderDotGrid(
-            width = 300,
-            height = 100,
+            width = 600,
+            height = 300,
             totalUnits = totalHours,
             elapsedUnits = elapsedHours,
             elapsedColor = 0xFF3A3A3A.toInt(),
             remainingColor = 0xFFFFFFFF.toInt(),
             currentColor = 0xFFFF3B30.toInt(),
             backgroundColor = 0xFF000000.toInt(),
-            columns = 8,
-            dotRadiusPx = 10f,
-            spacingPx = 6f
+            columns = 8
         )
 
         val hourGridBitmap = WidgetRenderer.renderDotGrid(
-            width = 300,
-            height = 120,
+            width = 600,
+            height = 300,
             totalUnits = totalMinutes,
             elapsedUnits = elapsedMinutes,
             elapsedColor = 0xFF3A3A3A.toInt(),
             remainingColor = 0xFFFFFFFF.toInt(),
             currentColor = 0xFFFF3B30.toInt(),
             backgroundColor = 0xFF000000.toInt(),
-            columns = 10,
-            dotRadiusPx = 6f,
-            spacingPx = 3f
+            columns = 10
         )
 
         provideContent {
@@ -101,7 +97,7 @@ private fun DayHourWidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(Color.Black, Color.Black))
-            .padding(12.dp)
+            .padding(8.dp)
     ) {
         Column(
             modifier = GlanceModifier.fillMaxSize(),
@@ -112,19 +108,18 @@ private fun DayHourWidgetContent(
                 text = dayLabel,
                 style = TextStyle(
                     color = ColorProvider(Color.White, Color.White),
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
             )
-            Spacer(modifier = GlanceModifier.height(2.dp))
             Text(
                 text = "$remainingHours hours left",
                 style = TextStyle(
                     color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                    fontSize = 11.sp
+                    fontSize = 12.sp
                 )
             )
-            Spacer(modifier = GlanceModifier.height(8.dp))
+            Spacer(modifier = GlanceModifier.height(4.dp))
             Image(
                 provider = ImageProvider(dayGridBitmap),
                 contentDescription = "Day progress",

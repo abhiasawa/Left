@@ -64,12 +64,12 @@ class CountdownWidget : GlanceAppWidget() {
         }
 
         val ringBitmap = WidgetRenderer.renderProgressRing(
-            size = 200,
+            size = 300,
             progress = progress,
             elapsedColor = 0xFF3A3A3A.toInt(),
             remainingColor = colorInt,
             backgroundColor = android.graphics.Color.TRANSPARENT,
-            strokeWidth = 10f
+            strokeWidth = 16f
         )
 
         provideContent {
@@ -95,7 +95,7 @@ private fun CountdownWidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(Color.Black, Color.Black))
-            .padding(12.dp),
+            .padding(8.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -107,15 +107,15 @@ private fun CountdownWidgetContent(
                 Image(
                     provider = ImageProvider(ringBitmap),
                     contentDescription = "Countdown progress",
-                    modifier = GlanceModifier.size(80.dp),
+                    modifier = GlanceModifier.size(90.dp),
                     contentScale = ContentScale.Fit
                 )
-                Spacer(modifier = GlanceModifier.height(8.dp))
+                Spacer(modifier = GlanceModifier.height(6.dp))
                 Text(
                     text = "$remaining",
                     style = TextStyle(
                         color = ColorProvider(Color.White, Color.White),
-                        fontSize = 24.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
                     )
                 )
@@ -123,7 +123,7 @@ private fun CountdownWidgetContent(
                     text = "days left",
                     style = TextStyle(
                         color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                        fontSize = 11.sp
+                        fontSize = 12.sp
                     )
                 )
                 Spacer(modifier = GlanceModifier.height(4.dp))
@@ -131,7 +131,7 @@ private fun CountdownWidgetContent(
                     text = name,
                     style = TextStyle(
                         color = ColorProvider(Color.White, Color.White),
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     ),
                     maxLines = 1

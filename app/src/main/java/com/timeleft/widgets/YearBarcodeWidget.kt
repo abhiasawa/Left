@@ -47,8 +47,8 @@ class YearBarcodeWidget : GlanceAppWidget() {
         val percent = (elapsed.toFloat() / totalDays * 100).toInt()
 
         val barcodeBitmap = WidgetRenderer.renderBarcode(
-            width = 800,
-            height = 200,
+            width = 1000,
+            height = 300,
             totalUnits = totalDays,
             elapsedUnits = elapsed,
             elapsedColor = 0xFF3A3A3A.toInt(),
@@ -80,7 +80,7 @@ private fun BarcodeWidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(Color.Black, Color.Black))
-            .padding(12.dp)
+            .padding(8.dp)
     ) {
         Column(
             modifier = GlanceModifier.fillMaxSize(),
@@ -94,7 +94,7 @@ private fun BarcodeWidgetContent(
                     text = dateText,
                     style = TextStyle(
                         color = ColorProvider(Color.White, Color.White),
-                        fontSize = 13.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     modifier = GlanceModifier.defaultWeight()
@@ -103,22 +103,20 @@ private fun BarcodeWidgetContent(
                     text = "$percent%",
                     style = TextStyle(
                         color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                        fontSize = 12.sp
+                        fontSize = 13.sp
                     )
                 )
             }
-
-            Spacer(modifier = GlanceModifier.height(2.dp))
 
             Text(
                 text = "$remaining days left",
                 style = TextStyle(
                     color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                    fontSize = 11.sp
+                    fontSize = 12.sp
                 )
             )
 
-            Spacer(modifier = GlanceModifier.height(8.dp))
+            Spacer(modifier = GlanceModifier.height(4.dp))
 
             Image(
                 provider = ImageProvider(barcodeBitmap),
