@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -104,6 +105,7 @@ fun YouScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .shadow(6.dp, RoundedCornerShape(16.dp))
                     .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(20.dp)

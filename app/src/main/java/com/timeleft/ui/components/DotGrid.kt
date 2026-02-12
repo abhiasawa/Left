@@ -1,10 +1,13 @@
 package com.timeleft.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -35,7 +38,7 @@ fun DotGrid(
     elapsedColor: Color,
     remainingColor: Color,
     currentIndicatorColor: Color = Color(0xFFFF3B30),
-    columns: Int = 0, // 0 = auto-calculate
+    columns: Int = 0,
     dotSize: Dp = 12.dp,
     spacing: Dp = 4.dp,
     showCurrentIndicator: Boolean = true,
@@ -46,19 +49,37 @@ fun DotGrid(
     val dotSizePx = with(density) { dotSize.toPx() }
     val spacingPx = with(density) { spacing.toPx() }
 
+    // Staggered entrance animation with spring physics
     val animationProgress = remember(totalUnits, elapsedUnits) { Animatable(0f) }
     LaunchedEffect(totalUnits, elapsedUnits) {
         if (animateOnChange) {
             animationProgress.snapTo(0f)
-            animationProgress.animateTo(1f, animationSpec = tween(durationMillis = 600))
+            animationProgress.animateTo(
+                1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            )
         } else {
             animationProgress.snapTo(1f)
         }
     }
 
+    // Pulsing glow for current indicator
+    val glowPulse = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        glowPulse.animateTo(
+            1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200),
+                repeatMode = RepeatMode.Reverse
+            )
+        )
+    }
+
     Canvas(
-        modifier = modifier
-            .fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         val canvasWidth = size.width
         val effectiveColumns = if (columns > 0) columns else {
@@ -69,8 +90,6 @@ fun DotGrid(
         val cellWidth = dotSizePx + spacingPx
         val totalWidth = effectiveColumns * cellWidth - spacingPx
         val offsetX = (canvasWidth - totalWidth) / 2f
-
-        val rows = ceil(totalUnits.toFloat() / effectiveColumns).toInt()
 
         for (i in 0 until totalUnits) {
             val col = i % effectiveColumns
@@ -93,6 +112,22 @@ fun DotGrid(
             val radius = (dotSizePx / 2f) * scale
 
             if (radius > 0f) {
+                // Draw glow behind current indicator
+                if (isCurrent) {
+                    val glowAlpha = 0.15f + glowPulse.value * 0.15f
+                    val glowRadius = radius * (1.6f + glowPulse.value * 0.6f)
+                    drawCircle(
+                        color = currentIndicatorColor.copy(alpha = glowAlpha * 0.5f),
+                        radius = glowRadius,
+                        center = Offset(cx, cy)
+                    )
+                    drawCircle(
+                        color = currentIndicatorColor.copy(alpha = glowAlpha),
+                        radius = radius * (1.3f + glowPulse.value * 0.2f),
+                        center = Offset(cx, cy)
+                    )
+                }
+
                 when (symbolType) {
                     SymbolType.DOT -> {
                         drawCircle(
@@ -204,9 +239,6 @@ private fun DrawScope.drawHexagon(color: Color, cx: Float, cy: Float, radius: Fl
     drawPath(path, color, style = Fill)
 }
 
-/**
- * Calculate the height needed for a dot grid given parameters.
- */
 fun calculateGridHeight(
     totalUnits: Int,
     columns: Int,

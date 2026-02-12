@@ -66,7 +66,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.7")
+
+    // Splash Screen
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Glance (Widgets)
     implementation("androidx.glance:glance-appwidget:1.1.0")

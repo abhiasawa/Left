@@ -27,7 +27,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.timeleft.data.preferences.UserPreferencesData
 import com.timeleft.domain.models.SymbolType
 import com.timeleft.domain.models.TimeUnit
+import com.timeleft.ui.components.ConfettiAnimation
 import com.timeleft.ui.components.DotGrid
 import com.timeleft.ui.components.TimeSelector
 import com.timeleft.ui.components.calculateGridHeight
@@ -64,6 +68,16 @@ fun LeftScreen(
 
     val timeData = remember(selectedUnit, preferences) {
         getTimeData(selectedUnit, preferences)
+    }
+
+    // Milestone celebration
+    var showConfetti by remember { mutableStateOf(false) }
+    val milestoneHit = remember(timeData.progressPercent) {
+        val p = timeData.progressPercent
+        p >= 25f && p < 25.5f || p >= 50f && p < 50.5f || p >= 75f && p < 75.5f
+    }
+    if (milestoneHit && !showConfetti) {
+        showConfetti = true
     }
 
     val configuration = LocalConfiguration.current
@@ -183,6 +197,14 @@ fun LeftScreen(
             )
 
             Spacer(modifier = Modifier.height(100.dp)) // Space for bottom nav
+        }
+
+        // Confetti overlay
+        if (showConfetti) {
+            ConfettiAnimation(
+                show = true,
+                onComplete = { showConfetti = false }
+            )
         }
     }
 }
