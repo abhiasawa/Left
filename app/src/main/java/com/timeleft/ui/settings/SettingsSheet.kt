@@ -34,6 +34,18 @@ import com.timeleft.ui.theme.AccentBlue
 import com.timeleft.ui.theme.PresetColors
 import com.timeleft.ui.theme.PresetElapsedColors
 
+/**
+ * Modal bottom sheet for app customization.
+ *
+ * Sections (top → bottom):
+ * - **Preview** — live 40-dot grid reflecting current symbol + colors.
+ * - **Symbol** — shape picker (dot, star, heart, etc.).
+ * - **Colors** — remaining + elapsed color swatches.
+ * - **Appearance** — dark-mode toggle.
+ * - **Notifications** — master toggle plus daily / milestone sub-toggles.
+ *
+ * Opened via long-press on the main [LeftScreen].
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsSheet(
@@ -204,6 +216,7 @@ private fun SettingsDivider() {
     )
 }
 
+/** Reusable label + optional subtitle + switch row. */
 @Composable
 private fun SettingsToggle(
     label: String,
@@ -252,6 +265,7 @@ private fun parseColor(hex: String): Color {
     }
 }
 
+/** Converts a Compose [Color] to a "#RRGGBB" hex string for persistence. */
 private fun colorToHex(color: Color): String {
     return String.format(
         "#%02X%02X%02X",

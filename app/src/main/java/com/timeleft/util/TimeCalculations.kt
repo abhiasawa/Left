@@ -6,14 +6,23 @@ import java.time.LocalDateTime
 import java.time.Year
 import java.time.temporal.ChronoUnit
 
+/**
+ * Pure-function helpers that compute elapsed / remaining time for every
+ * supported [TimeUnit].
+ *
+ * All functions are stateless — they read the current system clock
+ * internally so callers don't need to pass "now".
+ */
 object TimeCalculations {
 
-    // --- Year ---
+    // ── Year ─────────────────────────────────────────────────────────────
 
+    /** 365 or 366 depending on leap year. */
     fun totalDaysInYear(year: Int = Year.now().value): Int {
         return if (Year.of(year).isLeap) 366 else 365
     }
 
+    /** Zero-based: Jan 1 → 0, Jan 2 → 1, etc. */
     fun daysElapsedInYear(): Int {
         return LocalDate.now().dayOfYear - 1
     }
@@ -22,11 +31,12 @@ object TimeCalculations {
         return totalDaysInYear() - daysElapsedInYear() - 1
     }
 
+    /** e.g. "2026" */
     fun yearLabel(): String {
         return Year.now().value.toString()
     }
 
-    // --- Month ---
+    // ── Month ────────────────────────────────────────────────────────────
 
     fun totalDaysInMonth(): Int {
         val now = LocalDate.now()
@@ -41,12 +51,13 @@ object TimeCalculations {
         return totalDaysInMonth() - daysElapsedInMonth() - 1
     }
 
+    /** e.g. "February" */
     fun monthLabel(): String {
         val now = LocalDate.now()
         return now.month.name.lowercase().replaceFirstChar { it.uppercase() }
     }
 
-    // --- Week ---
+    // ── Week (Monday = first day) ────────────────────────────────────────
 
     fun totalDaysInWeek(): Int = 7
 
@@ -59,12 +70,13 @@ object TimeCalculations {
         return totalDaysInWeek() - daysElapsedInWeek() - 1
     }
 
+    /** e.g. "Week 7" */
     fun weekLabel(): String {
         val now = LocalDate.now()
         return "Week ${(now.dayOfYear - 1) / 7 + 1}"
     }
 
-    // --- Day ---
+    // ── Day (supports configurable active-hours window) ──────────────────
 
     fun totalHoursInDay(activeStart: Int = 0, activeEnd: Int = 24): Int {
         return activeEnd - activeStart
@@ -82,12 +94,13 @@ object TimeCalculations {
         return remaining.coerceIn(0, totalHoursInDay(activeStart, activeEnd))
     }
 
+    /** e.g. "Wednesday" */
     fun dayLabel(): String {
         val now = LocalDate.now()
         return now.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }
     }
 
-    // --- Hour ---
+    // ── Hour ─────────────────────────────────────────────────────────────
 
     fun totalMinutesInHour(): Int = 60
 
@@ -99,6 +112,7 @@ object TimeCalculations {
         return 60 - minutesElapsedInHour() - 1
     }
 
+    /** 12-hour format, e.g. "3 PM" */
     fun hourLabel(): String {
         val now = LocalDateTime.now()
         val hour = now.hour
@@ -111,8 +125,9 @@ object TimeCalculations {
         return "$displayHour $amPm"
     }
 
-    // --- Life ---
+    // ── Life ─────────────────────────────────────────────────────────────
 
+    /** Full years the user has been alive. */
     fun lifeYearsElapsed(birthDate: LocalDate): Int {
         return ChronoUnit.YEARS.between(birthDate, LocalDate.now()).toInt()
     }
@@ -122,13 +137,18 @@ object TimeCalculations {
         return (expectedLifespan - lived).coerceAtLeast(0)
     }
 
+    /** Returns 0.0–1.0 ratio of years lived vs expected lifespan. */
     fun lifeProgress(birthDate: LocalDate, expectedLifespan: Int): Float {
         val lived = lifeYearsElapsed(birthDate)
         return if (expectedLifespan > 0) (lived.toFloat() / expectedLifespan).coerceIn(0f, 1f) else 0f
     }
 
-    // --- Life Expectancy by Country/Gender ---
+    // ── Life Expectancy (statistical lookup) ─────────────────────────────
 
+    /**
+     * Returns estimated lifespan in years based on WHO/UN averages.
+     * Table entries are (male, female) pairs per country.
+     */
     fun estimateLifeExpectancy(gender: String, country: String): Int {
         val table = mapOf(
             "Japan" to Pair(81, 87),
@@ -161,6 +181,7 @@ object TimeCalculations {
         }
     }
 
+    /** Alphabetical list of supported countries for the life expectancy picker. */
     val availableCountries: List<String> = listOf(
         "Australia", "Brazil", "Canada", "China", "France",
         "Germany", "India", "Italy", "Japan", "Mexico",
@@ -169,12 +190,14 @@ object TimeCalculations {
         "United Kingdom", "United States"
     )
 
-    // --- Custom Date ---
+    // ── Custom Date helpers ────────────────────────────────────────────
 
+    /** Days from today until [targetDate] (negative if in the past). */
     fun daysUntil(targetDate: LocalDate): Long {
         return ChronoUnit.DAYS.between(LocalDate.now(), targetDate)
     }
 
+    /** Days since [pastDate] (positive if in the past). */
     fun daysSince(pastDate: LocalDate): Long {
         return ChronoUnit.DAYS.between(pastDate, LocalDate.now())
     }

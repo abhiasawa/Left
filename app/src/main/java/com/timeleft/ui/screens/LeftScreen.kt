@@ -48,6 +48,15 @@ import com.timeleft.ui.components.calculateGridHeight
 import com.timeleft.util.TimeCalculations
 import java.time.LocalDate
 
+/**
+ * Main screen — displays the dot-grid time visualization.
+ *
+ * Layout (top → bottom): header row (label + "X days left" + share),
+ * [TimeSelector] pill bar, animated [DotGrid], progress percentage.
+ *
+ * Long-pressing anywhere opens the Settings sheet.
+ * Confetti fires when progress crosses 25%, 50%, or 75%.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LeftScreen(
@@ -70,7 +79,7 @@ fun LeftScreen(
         getTimeData(selectedUnit, preferences)
     }
 
-    // Milestone celebration
+    // Trigger confetti when progress lands on a milestone (0.5% tolerance window)
     var showConfetti by remember { mutableStateOf(false) }
     val milestoneHit = remember(timeData.progressPercent) {
         val p = timeData.progressPercent
@@ -80,6 +89,7 @@ fun LeftScreen(
         showConfetti = true
     }
 
+    // Pre-calculate grid dimensions so the DotGrid Canvas gets the right height
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp.toFloat()
     val dotSize = 12f
@@ -209,6 +219,7 @@ fun LeftScreen(
     }
 }
 
+/** Presentation model consumed by [LeftScreen] to render the header and grid. */
 data class TimeData(
     val total: Int,
     val elapsed: Int,
@@ -217,6 +228,7 @@ data class TimeData(
     val progressPercent: Float
 )
 
+/** Maps a [TimeUnit] + user preferences into a [TimeData] snapshot using [TimeCalculations]. */
 fun getTimeData(unit: TimeUnit, preferences: UserPreferencesData): TimeData {
     return when (unit) {
         TimeUnit.YEAR -> {

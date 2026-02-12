@@ -45,6 +45,7 @@ import com.timeleft.ui.screens.LeftScreen
 import com.timeleft.ui.screens.YouScreen
 import java.time.LocalDate
 
+/** Defines the three bottom-navigation destinations with route, label, and icon. */
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     data object Left : Screen("left", "Left", Icons.Outlined.CalendarToday)
     data object Ahead : Screen("ahead", "Ahead", Icons.Outlined.EventAvailable)
@@ -53,6 +54,13 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 
 val bottomNavItems = listOf(Screen.Left, Screen.Ahead, Screen.You)
 
+/**
+ * Root composable that wires together the [Scaffold], floating bottom nav bar,
+ * and [NavHost] with fade transitions between the three screens.
+ *
+ * All callback lambdas are hoisted from [MainActivity] so this composable
+ * remains stateless and testable.
+ */
 @Composable
 fun AppNavigation(
     preferences: UserPreferencesData,

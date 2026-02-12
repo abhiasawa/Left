@@ -27,6 +27,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timeleft.domain.models.SymbolType
 
+/**
+ * Flow-row grid of tappable symbol previews.
+ *
+ * Each symbol shows its Unicode glyph (or "12" for the number type).
+ * The selected chip gets a highlighted background + border with a smooth color animation.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SymbolPicker(
@@ -82,6 +88,10 @@ fun SymbolPicker(
     }
 }
 
+/**
+ * Row of circular color swatches. The selected swatch has a thicker border.
+ * Used in the Settings sheet for choosing elapsed / remaining dot colors.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ColorPicker(

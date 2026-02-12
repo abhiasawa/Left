@@ -8,6 +8,13 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
+/**
+ * Room entity that persists user-created countdown events.
+ *
+ * Dates are stored as epoch milliseconds because Room cannot natively
+ * serialize [LocalDate]. Use [toDomain] / [fromDomain] to convert
+ * between the persistence and domain layers.
+ */
 @Entity(tableName = "custom_dates")
 data class CustomDateEntity(
     @PrimaryKey(autoGenerate = true)
@@ -20,6 +27,7 @@ data class CustomDateEntity(
     val isCountUp: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 ) {
+    /** Converts this entity to a domain [CustomDate] with proper [LocalDate] fields. */
     fun toDomain(): CustomDate {
         return CustomDate(
             id = id,
@@ -34,6 +42,7 @@ data class CustomDateEntity(
     }
 
     companion object {
+        /** Creates an entity from a domain [CustomDate], converting dates to epoch millis. */
         fun fromDomain(customDate: CustomDate): CustomDateEntity {
             return CustomDateEntity(
                 id = customDate.id,

@@ -40,6 +40,17 @@ import androidx.compose.ui.unit.sp
 import com.timeleft.domain.models.TimeUnit
 import kotlin.math.roundToInt
 
+/**
+ * Horizontal pill-bar that lets the user pick a [TimeUnit] (Year, Month, Week, etc.).
+ *
+ * A translucent pill slides behind the selected label using a bouncy spring
+ * animation. Each tap triggers haptic feedback for a tactile feel.
+ *
+ * The pill's position is tracked via [onGloballyPositioned] on each label,
+ * then animated with [animateFloatAsState].
+ *
+ * @param showLifeOption When false, hides the LIFE option (if no birth date is set).
+ */
 @Composable
 fun TimeSelector(
     selectedUnit: TimeUnit,
@@ -52,6 +63,7 @@ fun TimeSelector(
     val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
 
+    // Track the selected item's layout position so the pill can follow it
     var pillX by remember { mutableFloatStateOf(0f) }
     var pillWidth by remember { mutableIntStateOf(0) }
     var pillHeight by remember { mutableIntStateOf(0) }

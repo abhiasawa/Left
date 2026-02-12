@@ -29,6 +29,11 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.timeleft.util.TimeCalculations
 
+/**
+ * Home screen widget that displays the current year's progress as a dot grid.
+ * Each dot represents one day; elapsed days are dimmed, today is red,
+ * and remaining days are white.
+ */
 class YearProgressWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -60,6 +65,7 @@ class YearProgressWidget : GlanceAppWidget() {
     }
 }
 
+/** Glance composable layout for the year progress widget. */
 @Composable
 private fun YearWidgetContent(
     year: String,
@@ -104,6 +110,7 @@ private fun YearWidgetContent(
     }
 }
 
+/** Broadcast receiver that binds [YearProgressWidget] to the Android widget framework. */
 class YearProgressWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = YearProgressWidget()
 }

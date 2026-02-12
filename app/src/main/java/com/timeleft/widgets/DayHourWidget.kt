@@ -29,6 +29,11 @@ import androidx.glance.text.TextStyle
 import androidx.glance.color.ColorProvider
 import com.timeleft.util.TimeCalculations
 
+/**
+ * Home screen widget that shows how many hours remain in the current day
+ * using a dot grid. Each dot represents one hour of the 24-hour day.
+ * Also computes minute-level data for potential future use.
+ */
 class DayHourWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -37,6 +42,7 @@ class DayHourWidget : GlanceAppWidget() {
         val remainingHours = TimeCalculations.hoursLeftInDay()
         val dayLabel = TimeCalculations.dayLabel()
 
+        // Minute-level data computed but only the day grid is rendered currently
         val totalMinutes = TimeCalculations.totalMinutesInHour()
         val elapsedMinutes = TimeCalculations.minutesElapsedInHour()
         val remainingMinutes = TimeCalculations.minutesLeftInHour()
@@ -82,6 +88,7 @@ class DayHourWidget : GlanceAppWidget() {
     }
 }
 
+/** Glance composable layout for the day/hour progress widget. */
 @Composable
 private fun DayHourWidgetContent(
     dayLabel: String,
@@ -128,6 +135,7 @@ private fun DayHourWidgetContent(
     }
 }
 
+/** Broadcast receiver that binds [DayHourWidget] to the Android widget framework. */
 class DayHourWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = DayHourWidget()
 }

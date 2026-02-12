@@ -22,6 +22,13 @@ import kotlinx.coroutines.flow.first
 import java.time.Year
 import java.util.concurrent.TimeUnit
 
+/**
+ * Manages notification channels and scheduling for daily updates,
+ * milestone alerts, and custom-date reminders.
+ *
+ * Uses [WorkManager] for reliable background scheduling that survives
+ * process death and device reboots.
+ */
 object NotificationHelper {
 
     const val CHANNEL_DAILY = "daily_updates"
@@ -30,6 +37,7 @@ object NotificationHelper {
 
     private const val DAILY_WORK_TAG = "daily_notification_work"
 
+    /** Registers all notification channels (safe to call repeatedly — Android deduplicates). */
     fun createNotificationChannels(context: Context) {
         val dailyChannel = NotificationChannel(
             CHANNEL_DAILY,
@@ -59,6 +67,7 @@ object NotificationHelper {
         manager.createNotificationChannels(listOf(dailyChannel, milestoneChannel, customChannel))
     }
 
+    /** Enqueues a once-per-day periodic worker. Uses KEEP policy to avoid duplicates. */
     fun scheduleDailyNotification(context: Context) {
         val request = PeriodicWorkRequestBuilder<DailyNotificationWorker>(
             1, TimeUnit.DAYS
@@ -75,6 +84,7 @@ object NotificationHelper {
         WorkManager.getInstance(context).cancelUniqueWork(DAILY_WORK_TAG)
     }
 
+    /** Posts a notification after verifying the POST_NOTIFICATIONS permission on Android 13+. */
     fun sendNotification(
         context: Context,
         channelId: String,
@@ -111,6 +121,12 @@ object NotificationHelper {
     }
 }
 
+/**
+ * WorkManager worker that fires once per day.
+ *
+ * Sends a "days left in the year" notification and checks whether any
+ * milestone thresholds (25%, 50%, 75%, 90%) were crossed since yesterday.
+ */
 class DailyNotificationWorker(
     private val context: Context,
     workerParams: WorkerParameters
@@ -133,7 +149,7 @@ class DailyNotificationWorker(
             notificationId = 1001
         )
 
-        // Check milestones
+        // Fire milestone notifications when a threshold is newly crossed
         if (prefs.milestoneNotificationEnabled) {
             val totalDays = TimeCalculations.totalDaysInYear()
             val elapsed = TimeCalculations.daysElapsedInYear()

@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import kotlin.math.sin
 import kotlin.random.Random
 
+/** Per-particle state: all values are randomised once and then immutable. */
 private data class ConfettiParticle(
     val x: Float,
     val startY: Float,
@@ -39,6 +40,13 @@ private val confettiColors = listOf(
     Color(0xFF5AC8FA)
 )
 
+/**
+ * Full-screen confetti burst triggered on milestone progress (25%, 50%, 75%).
+ *
+ * 60 coloured rectangles fall from the top of the screen with gravity,
+ * sine-wave wobble, and individual rotation. The animation runs for 2.5 s
+ * then calls [onComplete] to let the parent dismiss it.
+ */
 @Composable
 fun ConfettiAnimation(
     show: Boolean,

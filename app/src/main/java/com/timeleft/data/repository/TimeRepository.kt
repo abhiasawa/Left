@@ -6,11 +6,20 @@ import com.timeleft.domain.models.CustomDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+/**
+ * Repository that bridges the domain layer with the Room persistence layer
+ * for user-created countdown events.
+ *
+ * All public methods operate on domain [CustomDate] objects; entity
+ * conversion is handled internally via [CustomDateEntity.fromDomain] / [toDomain].
+ */
 class TimeRepository(private val customDateDao: CustomDateDao) {
 
+    /** Reactive stream of all events, mapped from entities to domain models. */
     val customDates: Flow<List<CustomDate>> = customDateDao.getAllCustomDates()
         .map { entities -> entities.map { it.toDomain() } }
 
+    /** Persists a new event and returns its auto-generated row ID. */
     suspend fun addCustomDate(customDate: CustomDate): Long {
         return customDateDao.insertCustomDate(CustomDateEntity.fromDomain(customDate))
     }

@@ -53,6 +53,15 @@ import com.timeleft.util.TimeCalculations
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+/**
+ * "You" tab — personal profile and life-progress settings.
+ *
+ * Sections:
+ * 1. **Life Progress card** (visible only when birth date is set) — dot grid of lifespan.
+ * 2. **Personal** — name, birth date, gender, country pickers.
+ * 3. **Life Expectancy** — slider (40–120 years) with auto-estimate from demographics.
+ * 4. **Active Hours** — start/end sliders for the Day view.
+ */
 @Composable
 fun YouScreen(
     preferences: UserPreferencesData,
@@ -480,6 +489,7 @@ private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
     cursorColor = MaterialTheme.colorScheme.onBackground
 )
 
+/** Converts 24-hour int to "3 PM" format for the active-hours sliders. */
 private fun formatHour(hour: Int): String {
     return when {
         hour == 0 -> "12 AM"

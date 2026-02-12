@@ -14,8 +14,18 @@ import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.sin
 
+/**
+ * Generates a shareable image of the current dot-grid progress and
+ * launches the Android share sheet.
+ *
+ * The flow is: render bitmap → save to cache dir → share via [FileProvider].
+ */
 object ShareHelper {
 
+    /**
+     * Creates a dot-grid snapshot image and opens the system share sheet.
+     * The image is saved temporarily in the app's cache directory.
+     */
     fun shareTimeLeft(
         context: Context,
         totalUnits: Int,
@@ -61,6 +71,10 @@ object ShareHelper {
         context.startActivity(Intent.createChooser(intent, "Share TimeLeft"))
     }
 
+    /**
+     * Renders the dot grid onto an Android [Bitmap] using the Canvas API.
+     * Used both for sharing and for widget previews.
+     */
     fun renderGrid(
         totalUnits: Int,
         elapsedUnits: Int,

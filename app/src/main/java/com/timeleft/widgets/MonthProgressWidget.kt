@@ -29,6 +29,11 @@ import androidx.glance.text.TextStyle
 import androidx.glance.color.ColorProvider
 import com.timeleft.util.TimeCalculations
 
+/**
+ * Home screen widget showing the current month's progress as a 7-column dot grid.
+ * The 7-column layout mirrors a calendar week, making it intuitive
+ * to see how far through the month we are.
+ */
 class MonthProgressWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -61,6 +66,7 @@ class MonthProgressWidget : GlanceAppWidget() {
     }
 }
 
+/** Glance composable layout for the month progress widget. */
 @Composable
 private fun MonthWidgetContent(
     monthName: String,
@@ -105,6 +111,7 @@ private fun MonthWidgetContent(
     }
 }
 
+/** Broadcast receiver that binds [MonthProgressWidget] to the Android widget framework. */
 class MonthProgressWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = MonthProgressWidget()
 }

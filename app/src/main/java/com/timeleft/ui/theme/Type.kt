@@ -8,6 +8,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.timeleft.R
 
+/**
+ * Inter font family with four static weight variants.
+ * Used as the default typeface across every Material 3 text style.
+ */
 val InterFontFamily = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal),
     Font(R.font.inter_medium, FontWeight.Medium),
@@ -15,6 +19,7 @@ val InterFontFamily = FontFamily(
     Font(R.font.inter_bold, FontWeight.Bold)
 )
 
+/** Material 3 typography scale — every style uses [InterFontFamily]. */
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = InterFontFamily,

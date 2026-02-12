@@ -67,6 +67,13 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
 
+/**
+ * "Ahead" tab — manages user-created countdown events.
+ *
+ * Shows an empty state when no dates exist, otherwise a scrollable list
+ * of [CountdownCard]s. A FAB opens [AddDateSheet] to create new events.
+ * Deleting a card shows a confirmation dialog before removing it.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AheadScreen(
@@ -194,6 +201,7 @@ fun AheadScreen(
     }
 }
 
+/** A single countdown event card with colour dot, name, days text, and progress bar. */
 @Composable
 private fun CountdownCard(
     customDate: CustomDate,
@@ -300,6 +308,7 @@ private fun CountdownCard(
     }
 }
 
+/** Bottom sheet form for creating a new countdown event. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddDateSheet(

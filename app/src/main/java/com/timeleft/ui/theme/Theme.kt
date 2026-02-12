@@ -12,6 +12,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+// ── Color schemes ────────────────────────────────────────────────────
+// Each scheme maps the app's custom palette to Material 3 semantic slots.
+
 private val DarkColorScheme = darkColorScheme(
     primary = DotRemainingDark,
     onPrimary = Black,
@@ -54,6 +57,14 @@ private val LightColorScheme = lightColorScheme(
     outlineVariant = Color(0xFFD1D1D6),
 )
 
+/**
+ * Top-level theme wrapper for the entire app.
+ *
+ * Handles:
+ * - Dark / light color scheme selection.
+ * - Transparent status & navigation bars with matching icon tint.
+ * - Custom [Typography] powered by the Inter font family.
+ */
 @Composable
 fun TimeLeftTheme(
     darkTheme: Boolean = true,
@@ -63,6 +74,7 @@ fun TimeLeftTheme(
 
     val view = LocalView.current
     if (!view.isInEditMode) {
+        // Synchronize system-bar appearance with the current theme
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = Color.Transparent.toArgb()

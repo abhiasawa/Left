@@ -31,6 +31,11 @@ import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
 import kotlinx.coroutines.flow.first
 
+/**
+ * Home screen widget that shows estimated life progress as a dot grid.
+ * Each dot represents one year of the user's expected lifespan.
+ * Requires a birth date to be set in the app; otherwise displays a prompt.
+ */
 class LifeProgressWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -38,6 +43,7 @@ class LifeProgressWidget : GlanceAppWidget() {
         val birthDate = prefs.birthDate
         val lifespan = prefs.expectedLifespan
 
+        // Fall back to zero/full when birth date is missing so the grid still renders
         val yearsLived = if (birthDate != null) {
             TimeCalculations.lifeYearsElapsed(birthDate)
         } else 0
@@ -69,6 +75,7 @@ class LifeProgressWidget : GlanceAppWidget() {
     }
 }
 
+/** Glance composable layout for the life progress widget. */
 @Composable
 private fun LifeWidgetContent(
     yearsRemaining: Int,
@@ -113,6 +120,7 @@ private fun LifeWidgetContent(
     }
 }
 
+/** Broadcast receiver that binds [LifeProgressWidget] to the Android widget framework. */
 class LifeProgressWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = LifeProgressWidget()
 }

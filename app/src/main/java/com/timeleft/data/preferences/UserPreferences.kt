@@ -15,8 +15,10 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
+/** Singleton DataStore instance scoped to the application [Context]. */
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
 
+/** Typed keys for every persisted preference field. */
 object PreferenceKeys {
     val BIRTH_DATE = longPreferencesKey("birth_date")
     val EXPECTED_LIFESPAN = intPreferencesKey("expected_lifespan")
@@ -37,6 +39,12 @@ object PreferenceKeys {
     val HAS_COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
 }
 
+/**
+ * Snapshot of all user settings.
+ *
+ * Emitted from [UserPreferencesRepository.preferences] as a [Flow].
+ * Default values match the first-launch experience (dark mode, dot symbols, year view).
+ */
 data class UserPreferencesData(
     val birthDate: LocalDate? = null,
     val expectedLifespan: Int = 80,
@@ -57,8 +65,15 @@ data class UserPreferencesData(
     val hasCompletedOnboarding: Boolean = false
 )
 
+/**
+ * Single source of truth for user preferences, backed by Jetpack DataStore.
+ *
+ * Exposes a reactive [preferences] flow and individual `suspend` update methods.
+ * Each update is an atomic read-modify-write thanks to DataStore's [edit] API.
+ */
 class UserPreferencesRepository(private val context: Context) {
 
+    /** Reactive stream that emits a fresh [UserPreferencesData] on every change. */
     val preferences: Flow<UserPreferencesData> = context.dataStore.data.map { prefs ->
         UserPreferencesData(
             birthDate = prefs[PreferenceKeys.BIRTH_DATE]?.let {

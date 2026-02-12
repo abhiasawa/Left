@@ -39,6 +39,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timeleft.ui.theme.TimeLeftTheme
 
+/**
+ * Configuration screen shown when the user adds a widget to their home screen.
+ * Lets the user pick which widget type to display, then confirms placement
+ * and kicks off the periodic update worker.
+ */
 class WidgetConfigActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +55,7 @@ class WidgetConfigActivity : ComponentActivity() {
             AppWidgetManager.INVALID_APPWIDGET_ID
         ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
 
-        // Set the result to CANCELED initially
+        // Default to CANCELED so the widget isn't placed if the user backs out
         setResult(RESULT_CANCELED, Intent().apply {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         })

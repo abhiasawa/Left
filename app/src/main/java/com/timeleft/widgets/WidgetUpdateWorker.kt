@@ -9,11 +9,17 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import java.util.concurrent.TimeUnit
 
+/**
+ * Periodic background worker that refreshes all home screen widgets.
+ * Scheduled via WorkManager to run every 30 minutes so widget data
+ * stays reasonably current without draining the battery.
+ */
 class WidgetUpdateWorker(
     private val context: Context,
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
 
+    /** Triggers an update on every widget type; retries on failure. */
     override suspend fun doWork(): Result {
         return try {
             YearProgressWidget().updateAll(context)
@@ -31,6 +37,7 @@ class WidgetUpdateWorker(
     companion object {
         private const val WORK_NAME = "widget_update_work"
 
+        /** Enqueues a unique periodic job; KEEP policy avoids duplicate scheduling. */
         fun schedule(context: Context) {
             val request = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
                 30, TimeUnit.MINUTES

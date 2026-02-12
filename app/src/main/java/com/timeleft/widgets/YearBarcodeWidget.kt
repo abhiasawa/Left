@@ -32,6 +32,11 @@ import com.timeleft.util.TimeCalculations
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+/**
+ * Home screen widget that visualizes the year's progress as a barcode.
+ * Each vertical bar is one day; elapsed bars are shorter and dimmed to
+ * create a distinctive barcode-like pattern.
+ */
 class YearBarcodeWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -63,6 +68,7 @@ class YearBarcodeWidget : GlanceAppWidget() {
     }
 }
 
+/** Glance composable layout for the barcode year widget. */
 @Composable
 private fun BarcodeWidgetContent(
     dateText: String,
@@ -124,6 +130,7 @@ private fun BarcodeWidgetContent(
     }
 }
 
+/** Broadcast receiver that binds [YearBarcodeWidget] to the Android widget framework. */
 class YearBarcodeWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = YearBarcodeWidget()
 }

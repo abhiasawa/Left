@@ -33,6 +33,11 @@ import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+/**
+ * Home screen widget that displays a countdown to the nearest upcoming custom date.
+ * Shows a progress ring, the number of days remaining, and the event name.
+ * Falls back to a "No countdown" placeholder when no active countdowns exist.
+ */
 class CountdownWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -40,7 +45,7 @@ class CountdownWidget : GlanceAppWidget() {
         val dates = db.customDateDao().getAllCustomDates().firstOrNull() ?: emptyList()
         val now = LocalDate.now()
 
-        // Show the first active/upcoming countdown
+        // Pick the soonest upcoming event so the widget always shows the most relevant countdown
         val entity = dates
             .map { it.toDomain() }
             .filter { !it.isPast }
@@ -51,6 +56,7 @@ class CountdownWidget : GlanceAppWidget() {
         val total = entity?.totalDays ?: 1
         val elapsed = entity?.elapsedDays ?: 0
         val progress = entity?.progress ?: 0f
+        // Gracefully handle invalid or missing color hex values
         val colorInt = try {
             android.graphics.Color.parseColor(entity?.colorHex ?: "#FFFFFF")
         } catch (e: Exception) {
@@ -77,6 +83,7 @@ class CountdownWidget : GlanceAppWidget() {
     }
 }
 
+/** Glance composable layout for the countdown widget. */
 @Composable
 private fun CountdownWidgetContent(
     name: String,
@@ -150,6 +157,7 @@ private fun CountdownWidgetContent(
     }
 }
 
+/** Broadcast receiver that binds [CountdownWidget] to the Android widget framework. */
 class CountdownWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = CountdownWidget()
 }

@@ -5,6 +5,11 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
 
+/**
+ * Presentation-ready data for a single custom countdown/count-up event.
+ *
+ * @property displayText Contextual label shown on the card (e.g. "42 days left", "Completed").
+ */
 data class CustomDateResult(
     val name: String,
     val totalDays: Int,
@@ -14,12 +19,17 @@ data class CustomDateResult(
     val displayText: String
 )
 
+/**
+ * Resolves a [CustomDate] into a [CustomDateResult] depending on whether the
+ * event is counting up, hasn't started yet, is active, or has already passed.
+ */
 class CalculateCustomDateUseCase {
 
     operator fun invoke(customDate: CustomDate): CustomDateResult {
         val now = LocalDate.now()
 
         return when {
+            // Count-up: counts days *since* the start date
             customDate.isCountUp -> {
                 val daysSince = ChronoUnit.DAYS.between(customDate.startDate, now).toInt()
                 CustomDateResult(

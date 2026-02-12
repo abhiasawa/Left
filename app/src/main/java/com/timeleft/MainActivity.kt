@@ -26,13 +26,22 @@ import com.timeleft.util.NotificationHelper
 import com.timeleft.util.ShareHelper
 import kotlinx.coroutines.launch
 
+/**
+ * Single Activity that hosts the entire Compose UI.
+ *
+ * Responsibilities:
+ * - Installs the Android 12+ splash screen.
+ * - Initialises [UserPreferencesRepository] and [TimeRepository].
+ * - Observes reactive data flows and passes them down to composables.
+ * - Bridges UI callbacks to coroutine-based persistence updates.
+ */
 class MainActivity : ComponentActivity() {
 
     private lateinit var prefsRepository: UserPreferencesRepository
     private lateinit var timeRepository: TimeRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        installSplashScreen() // Must be called before super.onCreate()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
@@ -92,6 +101,7 @@ class MainActivity : ComponentActivity() {
                     onDeleteDate = { id ->
                         scope.launch { timeRepository.deleteCustomDate(id) }
                     },
+                    // When demographics change, auto-recalculate life expectancy
                     onBirthDateChanged = { date ->
                         scope.launch {
                             prefsRepository.updateBirthDate(date)

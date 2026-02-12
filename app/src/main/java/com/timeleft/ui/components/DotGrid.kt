@@ -30,6 +30,23 @@ import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.sin
 
+/**
+ * Core visualization: renders a grid of symbols representing elapsed vs. remaining time.
+ *
+ * Features:
+ * - Supports 7 symbol shapes (dot, square, diamond, star, heart, hexagon, number).
+ * - Staggered spring entrance animation when data changes.
+ * - Pulsing glow highlight on the "current" (next-to-fill) unit.
+ * - Auto-computes column count from available width when [columns] is 0.
+ *
+ * @param totalUnits            Total symbols in the grid.
+ * @param elapsedUnits          How many symbols are "filled" (elapsed).
+ * @param symbolType            Shape to draw for each unit.
+ * @param elapsedColor          Color for filled symbols.
+ * @param remainingColor        Color for unfilled symbols.
+ * @param currentIndicatorColor Highlight color for the next symbol to fill.
+ * @param columns               Fixed column count, or 0 to auto-fit.
+ */
 @Composable
 fun DotGrid(
     totalUnits: Int,
@@ -103,6 +120,7 @@ fun DotGrid(
             val baseColor = if (isElapsed) elapsedColor else remainingColor
             val color = if (isCurrent) currentIndicatorColor else baseColor
 
+            // Stagger: later items start animating slightly after earlier ones
             val itemProgress = if (animateOnChange) {
                 val delay = i.toFloat() / totalUnits
                 ((animationProgress.value - delay * 0.3f) / 0.7f).coerceIn(0f, 1f)
@@ -177,6 +195,9 @@ fun DotGrid(
     }
 }
 
+// ── Shape drawing helpers ─────────────────────────────────────────────
+// Each function draws a single symbol centered at (cx, cy) with the given radius.
+
 private fun DrawScope.drawDiamond(color: Color, cx: Float, cy: Float, radius: Float) {
     val path = Path().apply {
         moveTo(cx, cy - radius)
@@ -239,6 +260,7 @@ private fun DrawScope.drawHexagon(color: Color, cx: Float, cy: Float, radius: Fl
     drawPath(path, color, style = Fill)
 }
 
+/** Pre-calculates grid height in dp so the parent can reserve space before drawing. */
 fun calculateGridHeight(
     totalUnits: Int,
     columns: Int,
