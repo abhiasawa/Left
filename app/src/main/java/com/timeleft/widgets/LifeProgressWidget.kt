@@ -2,67 +2,48 @@ package com.timeleft.widgets
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
-import androidx.glance.GlanceModifier
-import androidx.glance.Image
-import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
-import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Spacer
-import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
-import androidx.glance.layout.padding
 import com.timeleft.MainActivity
 import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
 import kotlinx.coroutines.flow.first
 
 /**
- * Life widget rendered as a decade lattice with a strong remaining-years hero metric.
+ * Time Atlas: Life panel as a longitudinal age lattice.
  */
-class LifeProgressWidget : GlanceAppWidget() {
+class LifeProgressWidget : AtlasWidgetBase() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val prefs = UserPreferencesRepository(context).preferences.first()
         val style = widgetVisualStyle(prefs)
-        val card = style.cardColors(hueShift = -22f, saturationMul = 1.12f, valueMul = 0.98f, glowAlphaBoost = 1.2f)
+        val card = style.cardColors(hueShift = -28f, saturationMul = 1.12f, valueMul = 1.0f, glowAlphaBoost = 1.2f)
 
         val birthDate = prefs.birthDate
         val lifespan = prefs.expectedLifespan
 
-        val yearsLived = if (birthDate != null) {
-            TimeCalculations.lifeYearsElapsed(birthDate)
-        } else 0
-        val yearsRemaining = if (birthDate != null) {
-            TimeCalculations.lifeYearsRemaining(birthDate, lifespan)
-        } else lifespan
+        val yearsLived = if (birthDate != null) TimeCalculations.lifeYearsElapsed(birthDate) else 0
+        val yearsRemaining = if (birthDate != null) TimeCalculations.lifeYearsRemaining(birthDate, lifespan) else lifespan
         val percent = ((yearsLived.toFloat() / lifespan.coerceAtLeast(1)) * 100f).toInt()
 
-        val gridBitmap = WidgetRenderer.renderDotGrid(
-            width = 760,
-            height = 440,
-            totalUnits = lifespan,
-            elapsedUnits = yearsLived,
-            elapsedColor = style.elapsedColor,
-            remainingColor = style.remainingColor,
-            currentColor = style.currentColor,
-            backgroundColor = 0x00000000,
-            columns = 12
+        val backgrounds = BitmapVariants(
+            square = WidgetRenderer.renderAtlasCard(1080, 1080, card.start, card.end, card.glow, card.border),
+            wide = WidgetRenderer.renderAtlasCard(1500, 900, card.start, card.end, card.glow, card.border),
+            tall = WidgetRenderer.renderAtlasCard(900, 1500, card.start, card.end, card.glow, card.border)
         )
-        val backgroundBitmap = WidgetRenderer.renderAtmosphericCard(
-            width = 1080,
-            height = 1080,
-            startColor = card.start,
-            endColor = card.end,
-            glowColor = card.glow,
-            borderColor = card.border
+        val fields = BitmapVariants(
+            square = WidgetRenderer.renderAtlasDotField(880, 540, lifespan, yearsLived, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000, columns = 12),
+            wide = WidgetRenderer.renderAtlasDotField(1250, 420, lifespan, yearsLived, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000, columns = 16),
+            tall = WidgetRenderer.renderAtlasDotField(720, 980, lifespan, yearsLived, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000, columns = 10)
         )
 
         provideContent {
@@ -71,8 +52,8 @@ class LifeProgressWidget : GlanceAppWidget() {
                 yearsRemaining = yearsRemaining,
                 hasBirthDate = birthDate != null,
                 percent = percent,
-                gridBitmap = gridBitmap,
-                backgroundBitmap = backgroundBitmap,
+                backgroundVariants = backgrounds,
+                fieldVariants = fields,
                 style = style
             )
         }
@@ -85,12 +66,13 @@ private fun LifeWidgetContent(
     yearsRemaining: Int,
     hasBirthDate: Boolean,
     percent: Int,
-    gridBitmap: Bitmap,
-    backgroundBitmap: Bitmap,
+    backgroundVariants: BitmapVariants,
+    fieldVariants: BitmapVariants,
     style: WidgetVisualStyle
 ) {
     val size = LocalSize.current
-    val compact = size.width < 130.dp || size.height < 130.dp
+    val compact = size.width < 145.dp || size.height < 145.dp
+    val short = size.height < 130.dp
 
     val openAppIntent = Intent(context, MainActivity::class.java).apply {
         putExtra("time_unit", "LIFE")
@@ -99,38 +81,37 @@ private fun LifeWidgetContent(
 
     WidgetSurface(
         openAppIntent = openAppIntent,
-        backgroundBitmap = backgroundBitmap
+        backgroundBitmap = backgroundVariants.forWidgetSize(size),
+        contentPadding = if (compact) 7.dp else 10.dp
     ) {
-        Column {
+        Column(modifier = androidx.glance.GlanceModifier.fillMaxSize()) {
             WidgetHeader(
-                title = "Life",
+                title = "Life Atlas",
                 badge = "$percent%",
                 style = style,
                 compact = compact
             )
-            Spacer(modifier = GlanceModifier.height(4.dp))
-            WidgetHeroMetric(
-                value = if (hasBirthDate) "$yearsRemaining" else "--",
-                label = if (hasBirthDate) {
-                    if (compact) "years left" else "years remaining"
-                } else {
-                    "set birth date"
-                },
-                style = style,
-                compact = compact
-            )
-            Spacer(modifier = GlanceModifier.height(4.dp))
-            Image(
-                provider = ImageProvider(gridBitmap),
-                contentDescription = "Life progress lattice",
-                modifier = GlanceModifier
-                    .fillMaxWidth()
-                    .defaultWeight(),
+
+            if (!compact && !short) {
+                Spacer(modifier = androidx.glance.GlanceModifier.height(4.dp))
+                WidgetHeroMetric(
+                    value = if (hasBirthDate) "$yearsRemaining" else "--",
+                    label = if (hasBirthDate) "years remaining" else "set birth date",
+                    style = style,
+                    compact = compact
+                )
+            }
+
+            Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 4.dp))
+            androidx.glance.Image(
+                provider = androidx.glance.ImageProvider(fieldVariants.forWidgetSize(size)),
+                contentDescription = "Life atlas field",
+                modifier = androidx.glance.GlanceModifier.defaultWeight(),
                 contentScale = ContentScale.FillBounds
             )
-            Spacer(modifier = GlanceModifier.height(4.dp))
+            Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 4.dp))
             WidgetFooter(
-                leading = if (hasBirthDate) "Perspective" else "Profile needed",
+                leading = if (compact && hasBirthDate) "$yearsRemaining left" else if (hasBirthDate) "Perspective" else "Profile needed",
                 trailing = if (compact) null else "Lifespan",
                 style = style,
                 compact = compact
@@ -140,5 +121,5 @@ private fun LifeWidgetContent(
 }
 
 class LifeProgressWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = LifeProgressWidget()
+    override val glanceAppWidget = LifeProgressWidget()
 }

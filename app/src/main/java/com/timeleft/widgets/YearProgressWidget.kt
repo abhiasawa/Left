@@ -2,37 +2,30 @@ package com.timeleft.widgets
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
-import androidx.glance.GlanceModifier
-import androidx.glance.Image
-import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
-import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
 import androidx.glance.layout.Column
-import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Spacer
-import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
-import androidx.glance.layout.padding
 import com.timeleft.MainActivity
 import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
 import kotlinx.coroutines.flow.first
 
 /**
- * Year widget with an editorial composition: headline metric + dense day field.
+ * Time Atlas: Year panel as a dense survey map of days.
  */
-class YearProgressWidget : GlanceAppWidget() {
+class YearProgressWidget : AtlasWidgetBase() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val preferences = UserPreferencesRepository(context).preferences.first()
         val style = widgetVisualStyle(preferences)
-        val card = style.cardColors(hueShift = 10f, saturationMul = 1.08f, valueMul = 1.02f, glowAlphaBoost = 1.16f)
+        val card = style.cardColors(hueShift = 14f, saturationMul = 1.1f, valueMul = 1.04f, glowAlphaBoost = 1.22f)
 
         val totalDays = TimeCalculations.totalDaysInYear()
         val elapsed = TimeCalculations.daysElapsedInYear()
@@ -40,23 +33,15 @@ class YearProgressWidget : GlanceAppWidget() {
         val year = TimeCalculations.yearLabel()
         val percent = ((elapsed.toFloat() / totalDays) * 100f).toInt()
 
-        val gridBitmap = WidgetRenderer.renderDotGrid(
-            width = 920,
-            height = 470,
-            totalUnits = totalDays,
-            elapsedUnits = elapsed,
-            elapsedColor = style.elapsedColor,
-            remainingColor = style.remainingColor,
-            currentColor = style.currentColor,
-            backgroundColor = 0x00000000
+        val backgrounds = BitmapVariants(
+            square = WidgetRenderer.renderAtlasCard(1080, 1080, card.start, card.end, card.glow, card.border),
+            wide = WidgetRenderer.renderAtlasCard(1500, 900, card.start, card.end, card.glow, card.border),
+            tall = WidgetRenderer.renderAtlasCard(900, 1500, card.start, card.end, card.glow, card.border)
         )
-        val backgroundBitmap = WidgetRenderer.renderAtmosphericCard(
-            width = 1080,
-            height = 1080,
-            startColor = card.start,
-            endColor = card.end,
-            glowColor = card.glow,
-            borderColor = card.border
+        val fields = BitmapVariants(
+            square = WidgetRenderer.renderAtlasDotField(920, 520, totalDays, elapsed, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000),
+            wide = WidgetRenderer.renderAtlasDotField(1280, 430, totalDays, elapsed, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000),
+            tall = WidgetRenderer.renderAtlasDotField(760, 980, totalDays, elapsed, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000)
         )
 
         provideContent {
@@ -65,8 +50,8 @@ class YearProgressWidget : GlanceAppWidget() {
                 year = year,
                 remaining = remaining,
                 percent = percent,
-                gridBitmap = gridBitmap,
-                backgroundBitmap = backgroundBitmap,
+                backgroundVariants = backgrounds,
+                fieldVariants = fields,
                 style = style
             )
         }
@@ -79,12 +64,13 @@ private fun YearWidgetContent(
     year: String,
     remaining: Int,
     percent: Int,
-    gridBitmap: Bitmap,
-    backgroundBitmap: Bitmap,
+    backgroundVariants: BitmapVariants,
+    fieldVariants: BitmapVariants,
     style: WidgetVisualStyle
 ) {
     val size = LocalSize.current
-    val compact = size.width < 130.dp || size.height < 130.dp
+    val compact = size.width < 145.dp || size.height < 145.dp
+    val short = size.height < 130.dp
 
     val openAppIntent = Intent(context, MainActivity::class.java).apply {
         putExtra("time_unit", "YEAR")
@@ -93,36 +79,38 @@ private fun YearWidgetContent(
 
     WidgetSurface(
         openAppIntent = openAppIntent,
-        backgroundBitmap = backgroundBitmap
+        backgroundBitmap = backgroundVariants.forWidgetSize(size),
+        contentPadding = if (compact) 7.dp else 10.dp
     ) {
-        Column {
+        Column(modifier = androidx.glance.GlanceModifier.fillMaxSize()) {
             WidgetHeader(
-                title = "Year",
+                title = "Year Atlas",
                 badge = "$percent%",
                 style = style,
                 compact = compact
             )
-            Spacer(modifier = GlanceModifier.height(4.dp))
-            WidgetHeroMetric(
-                value = "$remaining",
-                label = if (compact) "days left" else "days remaining",
-                style = style,
-                compact = compact
+
+            if (!compact && !short) {
+                Spacer(modifier = androidx.glance.GlanceModifier.height(4.dp))
+                WidgetHeroMetric(
+                    value = "$remaining",
+                    label = "days remaining",
+                    style = style,
+                    compact = compact
+                )
+            }
+
+            Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 6.dp))
+            androidx.glance.Image(
+                provider = androidx.glance.ImageProvider(fieldVariants.forWidgetSize(size)),
+                contentDescription = "Year atlas field",
+                modifier = androidx.glance.GlanceModifier.defaultWeight(),
+                contentScale = androidx.glance.layout.ContentScale.FillBounds
             )
-            Spacer(modifier = GlanceModifier.height(6.dp))
-            Image(
-                provider = ImageProvider(gridBitmap),
-                contentDescription = "Year progress field",
-                modifier = GlanceModifier
-                    .fillMaxWidth()
-                    .defaultWeight()
-                    .padding(horizontal = 2.dp),
-                contentScale = ContentScale.FillBounds
-            )
-            Spacer(modifier = GlanceModifier.height(3.dp))
+            Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 4.dp))
             WidgetFooter(
-                leading = year,
-                trailing = if (compact) "Left" else "Left timeline",
+                leading = if (compact) "$remaining left" else year,
+                trailing = if (compact) null else "Chronomap",
                 style = style,
                 compact = compact
             )
@@ -131,5 +119,5 @@ private fun YearWidgetContent(
 }
 
 class YearProgressWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = YearProgressWidget()
+    override val glanceAppWidget = YearProgressWidget()
 }

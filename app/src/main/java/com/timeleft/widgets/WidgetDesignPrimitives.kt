@@ -4,11 +4,14 @@ import android.content.Intent
 import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
@@ -17,6 +20,7 @@ import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
@@ -27,10 +31,28 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 
+data class BitmapVariants(
+    val square: Bitmap,
+    val wide: Bitmap,
+    val tall: Bitmap
+)
+
+@Composable
+fun BitmapVariants.forWidgetSize(size: DpSize = LocalSize.current): Bitmap {
+    val isWide = size.width >= 220.dp && size.width > size.height * 1.25f
+    val isTall = size.height >= 220.dp && size.height > size.width * 1.25f
+    return when {
+        isWide -> wide
+        isTall -> tall
+        else -> square
+    }
+}
+
 @Composable
 fun WidgetSurface(
     openAppIntent: Intent,
     backgroundBitmap: Bitmap,
+    contentPadding: Dp = 10.dp,
     content: @Composable () -> Unit
 ) {
     Box(
@@ -42,12 +64,13 @@ fun WidgetSurface(
         Image(
             provider = ImageProvider(backgroundBitmap),
             contentDescription = null,
-            modifier = GlanceModifier.fillMaxSize()
+            modifier = GlanceModifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
         )
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .padding(10.dp)
+                .padding(contentPadding)
         ) {
             content()
         }
@@ -72,7 +95,8 @@ fun WidgetHeader(
                 fontSize = if (compact) 9.sp else 10.sp,
                 fontWeight = FontWeight.Bold
             ),
-            modifier = GlanceModifier.defaultWeight()
+            modifier = GlanceModifier.defaultWeight(),
+            maxLines = 1
         )
         if (badge != null) {
             Box(
@@ -87,7 +111,8 @@ fun WidgetHeader(
                         color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
                         fontSize = if (compact) 9.sp else 10.sp,
                         fontWeight = FontWeight.Medium
-                    )
+                    ),
+                    maxLines = 1
                 )
             }
         }
@@ -141,7 +166,7 @@ fun WidgetHeroMetric(
             text = value,
             style = TextStyle(
                 color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
-                fontSize = if (compact) 18.sp else 21.sp,
+                fontSize = if (compact) 16.sp else 19.sp,
                 fontWeight = FontWeight.Bold
             ),
             maxLines = 1
