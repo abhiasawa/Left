@@ -300,6 +300,7 @@ fun LeftScreen(
                                 TimeUnit.MONTH -> MonthCalendar(
                                     totalDays = total,
                                     elapsedDays = elapsed,
+                                    symbolType = symbolType,
                                     elapsedColor = elapsedColor,
                                     remainingColor = remainingColor,
                                     currentIndicatorColor = currentIndicatorColor,
@@ -309,6 +310,7 @@ fun LeftScreen(
                                 )
                                 TimeUnit.WEEK -> WeekView(
                                     elapsedDays = elapsed,
+                                    symbolType = symbolType,
                                     elapsedColor = elapsedColor,
                                     remainingColor = remainingColor,
                                     currentIndicatorColor = currentIndicatorColor,

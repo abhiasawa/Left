@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import com.timeleft.domain.models.SymbolType
 import java.time.LocalDate
 import kotlin.math.ceil
 import kotlin.math.min
@@ -29,6 +30,7 @@ import kotlin.math.min
 fun MonthCalendar(
     totalDays: Int,
     elapsedDays: Int,
+    symbolType: SymbolType,
     elapsedColor: Color,
     remainingColor: Color,
     currentIndicatorColor: Color,
@@ -111,10 +113,13 @@ fun MonthCalendar(
                     )
                 }
 
-                drawCircle(
+                drawTimelineSymbol(
+                    symbolType = symbolType,
                     color = color,
+                    cx = cx,
+                    cy = cy,
                     radius = radius,
-                    center = Offset(cx, cy)
+                    index = dayIndex
                 )
             }
         }
