@@ -1,7 +1,5 @@
 package com.timeleft.ui.components
 
-import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -14,36 +12,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
-import kotlin.math.ceil
+import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.sin
 
 /**
- * Day visualization: a grid of rounded blocks, one per active hour.
+ * Day visualization: dots arranged in a circular ring, one per hour.
  *
- * Each block shows the hour label (e.g., "6a", "12p"). Past hours are dimmed,
- * the current hour glows red, future hours are bright. Arranged in 4 columns
- * for a clean, immediately readable layout.
+ * Each dot represents one active hour. Elapsed hours are dimmed,
+ * the current hour pulses red, remaining hours are bright. Every 6th
+ * dot is larger as a quadrant marker (midnight/6am/noon/6pm).
+ * Mirrors the HourClock's circular language at a different time scale.
  */
 @Composable
 fun DayGrid(
     totalHours: Int,
     elapsedHours: Int,
-    startHour: Int,
+    startHour: Int = 0,
     elapsedColor: Color,
     remainingColor: Color,
     currentIndicatorColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val density = LocalDensity.current
-
     val animationProgress = remember(totalHours, elapsedHours) { Animatable(0f) }
     LaunchedEffect(totalHours, elapsedHours) {
         animationProgress.snapTo(0f)
@@ -66,32 +58,15 @@ fun DayGrid(
         val canvasHeight = size.height
         if (totalHours <= 0 || canvasWidth <= 0f || canvasHeight <= 0f) return@Canvas
 
-        val cols = when {
-            totalHours <= 6 -> 2
-            totalHours <= 9 -> 3
-            else -> 4
-        }
-        val rows = ceil(totalHours.toFloat() / cols).toInt()
-
-        val gap = with(density) { 4.dp.toPx() }
-        val cellW = (canvasWidth - (cols - 1) * gap) / cols
-        val cellH = (canvasHeight - (rows - 1) * gap) / rows
-        val cellSize = min(cellW, cellH)
-        val cornerR = cellSize * 0.18f
-
-        // Center grid
-        val gridW = cols * cellSize + (cols - 1) * gap
-        val gridH = rows * cellSize + (rows - 1) * gap
-        val offsetX = (canvasWidth - gridW) / 2f
-        val offsetY = (canvasHeight - gridH) / 2f
+        val center = Offset(canvasWidth / 2f, canvasHeight / 2f)
+        val maxDim = min(canvasWidth, canvasHeight)
+        val ringRadius = maxDim / 2f * 0.80f
+        val dotRadius = maxDim * 0.028f
+        val bigDotRadius = dotRadius * 1.6f
 
         for (i in 0 until totalHours) {
-            val col = i % cols
-            val row = i / cols
-            val hour = (startHour + i) % 24
-
-            val x = offsetX + col * (cellSize + gap)
-            val y = offsetY + row * (cellSize + gap)
+            // Start from 12-o'clock position (-90 degrees), go clockwise
+            val angle = Math.toRadians((i * 360.0 / totalHours) - 90.0)
 
             val isElapsed = i < elapsedHours
             val isCurrent = i == elapsedHours
@@ -101,70 +76,35 @@ fun DayGrid(
                 else -> remainingColor
             }
 
-            val itemProgress = ((animationProgress.value - i * 0.02f) / 0.5f).coerceIn(0f, 1f)
+            val itemProgress = ((animationProgress.value - i * 0.01f) / 0.5f).coerceIn(0f, 1f)
+            // Every 6th hour is a quadrant marker (larger dot)
+            val isQuadrant = i % 6 == 0
+            val r = (if (isQuadrant) bigDotRadius else dotRadius) * itemProgress
 
-            if (itemProgress > 0f) {
-                val scale = itemProgress
-                val w = cellSize * scale
-                val h = cellSize * scale
-                val cx = x + (cellSize - w) / 2f
-                val cy = y + (cellSize - h) / 2f
+            val cx = center.x + ringRadius * cos(angle).toFloat()
+            val cy = center.y + ringRadius * sin(angle).toFloat()
 
-                // Glow for current hour
+            if (r > 0f) {
                 if (isCurrent) {
-                    val glowAlpha = 0.08f + glowPulse.value * 0.08f
-                    drawRoundRect(
+                    val glowAlpha = 0.15f + glowPulse.value * 0.15f
+                    drawCircle(
+                        color = currentIndicatorColor.copy(alpha = glowAlpha * 0.5f),
+                        radius = r * 3.5f,
+                        center = Offset(cx, cy)
+                    )
+                    drawCircle(
                         color = currentIndicatorColor.copy(alpha = glowAlpha),
-                        topLeft = Offset(x - gap / 2, y - gap / 2),
-                        size = Size(cellSize + gap, cellSize + gap),
-                        cornerRadius = CornerRadius(cornerR * 1.3f)
+                        radius = r * 2f,
+                        center = Offset(cx, cy)
                     )
                 }
 
-                // Block
-                drawRoundRect(
+                drawCircle(
                     color = color,
-                    topLeft = Offset(cx, cy),
-                    size = Size(w, h),
-                    cornerRadius = CornerRadius(cornerR * scale)
+                    radius = r,
+                    center = Offset(cx, cy)
                 )
-
-                // Hour label inside block
-                if (itemProgress > 0.3f) {
-                    val textAlpha = ((itemProgress - 0.3f) / 0.7f).coerceIn(0f, 1f)
-                    val label = formatDayHour(hour)
-
-                    val blockLum = color.red * 0.299f + color.green * 0.587f + color.blue * 0.114f
-                    val textArgb = if (blockLum > 0.5f) {
-                        android.graphics.Color.argb((220 * textAlpha).toInt(), 0, 0, 0)
-                    } else {
-                        android.graphics.Color.argb((220 * textAlpha).toInt(), 255, 255, 255)
-                    }
-
-                    val textSize = cellSize * 0.26f
-                    drawContext.canvas.nativeCanvas.drawText(
-                        label,
-                        cx + w / 2f,
-                        cy + h / 2f + textSize * 0.35f,
-                        Paint().apply {
-                            this.color = textArgb
-                            this.textSize = textSize
-                            this.textAlign = Paint.Align.CENTER
-                            this.typeface = if (isCurrent)
-                                Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                            else Typeface.DEFAULT
-                            this.isAntiAlias = true
-                        }
-                    )
-                }
             }
         }
     }
-}
-
-private fun formatDayHour(hour: Int): String = when {
-    hour == 0 || hour == 24 -> "12a"
-    hour < 12 -> "${hour}a"
-    hour == 12 -> "12p"
-    else -> "${hour - 12}p"
 }
