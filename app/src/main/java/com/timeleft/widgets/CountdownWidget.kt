@@ -12,18 +12,13 @@ import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
-import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
-import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
@@ -36,26 +31,25 @@ import androidx.glance.color.ColorProvider
 import com.timeleft.MainActivity
 import com.timeleft.data.db.AppDatabase
 import com.timeleft.data.preferences.UserPreferencesRepository
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 /**
- * Home screen widget that displays a countdown to the nearest upcoming custom date.
- * Shows a dot grid where remaining dots use the event's accent color.
- * Falls back to a "No countdown" placeholder when no active countdowns exist.
+ * Countdown widget redesigned as a hero ring with event-first typography.
  */
 class CountdownWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val preferences = UserPreferencesRepository(context).preferences.first()
         val style = widgetVisualStyle(preferences)
+        val baseCard = style.cardColors(hueShift = 88f, saturationMul = 1.08f, valueMul = 1.04f, glowAlphaBoost = 1.25f)
+
         val db = AppDatabase.getDatabase(context)
         val dates = db.customDateDao().getAllCustomDates().firstOrNull() ?: emptyList()
         val now = LocalDate.now()
 
-        // Pick the soonest upcoming event so the widget always shows the most relevant countdown
         val entity = dates
             .map { it.toDomain() }
             .filter { !it.isPast }
@@ -65,31 +59,30 @@ class CountdownWidget : GlanceAppWidget() {
         val remaining = entity?.remainingDays ?: 0
         val total = entity?.totalDays ?: 1
         val elapsed = entity?.elapsedDays ?: 0
-        // Gracefully handle invalid or missing color hex values
-        val colorInt = try {
+        val progress = (elapsed.toFloat() / total.coerceAtLeast(1)).coerceIn(0f, 1f)
+
+        val eventColor = try {
             android.graphics.Color.parseColor(entity?.colorHex ?: "#FFFFFF")
-        } catch (e: Exception) {
-            style.remainingColor
+        } catch (_: Exception) {
+            style.currentColor
         }
 
-        // Dot grid: elapsed dots are dark, remaining dots use the event's accent color
-        val gridBitmap = WidgetRenderer.renderDotGrid(
-            width = 600,
-            height = 400,
-            totalUnits = total,
-            elapsedUnits = elapsed,
-            elapsedColor = style.elapsedColor,
-            remainingColor = colorInt,
-            currentColor = style.currentColor,
-            backgroundColor = 0x00000000
-        )
         val backgroundBitmap = WidgetRenderer.renderAtmosphericCard(
-            width = 900,
-            height = 900,
-            startColor = style.cardStart,
-            endColor = style.cardEnd,
-            glowColor = style.cardGlow,
-            borderColor = style.cardBorder
+            width = 1080,
+            height = 1080,
+            startColor = baseCard.start,
+            endColor = baseCard.end,
+            glowColor = eventColor,
+            borderColor = baseCard.border
+        )
+
+        val ringBitmap = WidgetRenderer.renderProgressRing(
+            size = 560,
+            progress = progress,
+            elapsedColor = style.elapsedColor,
+            remainingColor = eventColor,
+            backgroundColor = 0x00000000,
+            strokeWidth = 22f
         )
 
         provideContent {
@@ -97,8 +90,8 @@ class CountdownWidget : GlanceAppWidget() {
                 context = context,
                 name = name,
                 remaining = remaining,
-                gridBitmap = gridBitmap,
                 hasCountdown = entity != null,
+                ringBitmap = ringBitmap,
                 backgroundBitmap = backgroundBitmap,
                 style = style
             )
@@ -106,97 +99,82 @@ class CountdownWidget : GlanceAppWidget() {
     }
 }
 
-/** Glance composable layout for the countdown widget. */
 @Composable
 private fun CountdownWidgetContent(
     context: Context,
     name: String,
     remaining: Int,
-    gridBitmap: Bitmap,
     hasCountdown: Boolean,
+    ringBitmap: Bitmap,
     backgroundBitmap: Bitmap,
     style: WidgetVisualStyle
 ) {
     val size = LocalSize.current
     val compact = size.width < 130.dp || size.height < 130.dp
-    val fontSize = if (compact) 10.sp else 11.sp
-    val tertiarySecondary = Color(style.textSecondary).copy(alpha = 0.7f)
+
     val openAppIntent = Intent(context, MainActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
 
-    Box(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .cornerRadius(20.dp)
-            .clickable(actionStartActivity(openAppIntent))
+    WidgetSurface(
+        openAppIntent = openAppIntent,
+        backgroundBitmap = backgroundBitmap
     ) {
-        Image(
-            provider = ImageProvider(backgroundBitmap),
-            contentDescription = null,
-            modifier = GlanceModifier.fillMaxSize(),
-            contentScale = ContentScale.FillBounds
-        )
-        Column(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .padding(10.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalAlignment = Alignment.Start
-        ) {
+        Column {
+            WidgetHeader(
+                title = "Countdown",
+                badge = if (hasCountdown) "LIVE" else "SETUP",
+                style = style,
+                compact = compact
+            )
+            Spacer(modifier = GlanceModifier.height(4.dp))
+
             if (hasCountdown) {
-                Image(
-                    provider = ImageProvider(gridBitmap),
-                    contentDescription = "Countdown progress",
-                    modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
-                    contentScale = ContentScale.Fit
+                Text(
+                    text = name,
+                    style = TextStyle(
+                        color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = if (compact) 12.sp else 13.sp
+                    ),
+                    maxLines = 1
                 )
-                Row(
-                    modifier = GlanceModifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.Start,
-                    verticalAlignment = Alignment.CenterVertically
+                Spacer(modifier = GlanceModifier.height(6.dp))
+                Box(
+                    modifier = GlanceModifier
+                        .fillMaxWidth()
+                        .defaultWeight(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = name,
-                        style = TextStyle(
-                            color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
-                            fontSize = fontSize,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        maxLines = 1,
-                        modifier = GlanceModifier.defaultWeight()
-                    )
-                    Text(
-                        text = if (compact) "$remaining left" else "$remaining days left",
-                        style = TextStyle(
-                            color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
-                            fontSize = fontSize
-                        )
+                    Image(
+                        provider = ImageProvider(ringBitmap),
+                        contentDescription = "Countdown ring",
+                        modifier = GlanceModifier
+                            .fillMaxSize()
+                            .padding(horizontal = 12.dp, vertical = 2.dp),
+                        contentScale = ContentScale.Fit
                     )
                 }
+                WidgetFooter(
+                    leading = if (compact) "$remaining left" else "$remaining days left",
+                    trailing = "Target",
+                    style = style,
+                    compact = compact
+                )
             } else {
                 Spacer(modifier = GlanceModifier.defaultWeight())
-                Text(
-                    text = "No countdown",
-                    style = TextStyle(
-                        color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
-                        fontSize = fontSize
-                    )
+                WidgetHeroMetric(
+                    value = "No event",
+                    label = "Add countdown in app",
+                    style = style,
+                    compact = compact
                 )
-                Spacer(modifier = GlanceModifier.height(2.dp))
-                Text(
-                    text = "Add one in the app",
-                    style = TextStyle(
-                        color = ColorProvider(tertiarySecondary, tertiarySecondary),
-                        fontSize = fontSize
-                    )
-                )
+                Spacer(modifier = GlanceModifier.height(8.dp))
             }
         }
     }
 }
 
-/** Broadcast receiver that binds [CountdownWidget] to the Android widget framework. */
 class CountdownWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = CountdownWidget()
 }

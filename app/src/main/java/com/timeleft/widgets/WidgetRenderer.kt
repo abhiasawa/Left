@@ -2,6 +2,7 @@ package com.timeleft.widgets
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
@@ -58,6 +59,32 @@ object WidgetRenderer {
             strokeWidth = 2f
             color = borderColor
         }
+
+        // Editorial diagonal streaks inspired by premium dashboard widgets.
+        val streakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
+            color = adjustAlpha(borderColor, 0.22f)
+        }
+        for (i in 0..4) {
+            val y = height * (0.14f + i * 0.18f)
+            canvas.drawLine(-width * 0.08f, y, width * 0.52f, y - height * 0.18f, streakPaint)
+        }
+
+        // Fine grain points to avoid flat gradients.
+        val grainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = adjustAlpha(borderColor, 0.22f)
+        }
+        for (x in 0 until width step 14) {
+            for (y in 0 until height step 14) {
+                val pseudoRandom = (x * 31 + y * 17 + width + height) % 23
+                if (pseudoRandom < 3) {
+                    canvas.drawCircle(x.toFloat(), y.toFloat(), 0.9f, grainPaint)
+                }
+            }
+        }
+
         canvas.drawRoundRect(
             RectF(1f, 1f, width - 1f, height - 1f),
             cornerRadius,
@@ -300,5 +327,127 @@ object WidgetRenderer {
         canvas.drawArc(rect, -90f, progress * 360f, false, paint)
 
         return bitmap
+    }
+
+    /**
+     * Month-specific renderer that respects calendar offset for the first weekday.
+     */
+    fun renderMonthCalendarDots(
+        width: Int,
+        height: Int,
+        totalDays: Int,
+        elapsedDays: Int,
+        startOffset: Int,
+        elapsedColor: Int,
+        remainingColor: Int,
+        currentColor: Int,
+        backgroundColor: Int
+    ): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(backgroundColor)
+
+        if (totalDays <= 0) return bitmap
+
+        val cols = 7
+        val totalSlots = startOffset + totalDays
+        val rows = ceil(totalSlots.toFloat() / cols).toInt().coerceAtLeast(1)
+        val cellW = width.toFloat() / cols
+        val cellH = height.toFloat() / rows
+        val cell = minOf(cellW, cellH)
+        val radius = cell * 0.34f
+        val offsetX = (width - cols * cell) / 2f
+        val offsetY = (height - rows * cell) / 2f
+
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+
+        for (day in 0 until totalDays) {
+            val slot = startOffset + day
+            val col = slot % cols
+            val row = slot / cols
+            val cx = offsetX + col * cell + cell / 2f
+            val cy = offsetY + row * cell + cell / 2f
+
+            paint.color = when {
+                day == elapsedDays -> currentColor
+                day < elapsedDays -> elapsedColor
+                else -> remainingColor
+            }
+
+            shadowPaint.color = paint.color
+            shadowPaint.alpha = if (day == elapsedDays) 120 else 52
+            canvas.drawCircle(cx, cy + radius * 0.3f, radius * 1.2f, shadowPaint)
+            canvas.drawCircle(cx, cy, radius, paint)
+        }
+
+        return bitmap
+    }
+
+    /**
+     * Circular orbit renderer used by day/hour style widgets.
+     */
+    fun renderOrbitDots(
+        width: Int,
+        height: Int,
+        totalUnits: Int,
+        elapsedUnits: Int,
+        elapsedColor: Int,
+        remainingColor: Int,
+        currentColor: Int,
+        backgroundColor: Int,
+        emphasizeEvery: Int = 6
+    ): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(backgroundColor)
+
+        if (totalUnits <= 0) return bitmap
+
+        val centerX = width / 2f
+        val centerY = height / 2f
+        val maxDim = minOf(width, height).toFloat()
+        val ringRadius = maxDim * 0.38f
+        val dotRadius = maxDim * 0.03f
+        val majorRadius = dotRadius * 1.45f
+
+        val orbitPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 2.5f
+            color = adjustAlpha(remainingColor, 0.20f)
+        }
+        val orbitRect = RectF(
+            centerX - ringRadius, centerY - ringRadius,
+            centerX + ringRadius, centerY + ringRadius
+        )
+        canvas.drawArc(orbitRect, -58f, 296f, false, orbitPaint)
+
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+
+        for (i in 0 until totalUnits) {
+            val angle = Math.toRadians((i * 360.0 / totalUnits) - 90.0)
+            val cx = centerX + (ringRadius * kotlin.math.cos(angle)).toFloat()
+            val cy = centerY + (ringRadius * kotlin.math.sin(angle)).toFloat()
+            val radius = if (emphasizeEvery > 0 && i % emphasizeEvery == 0) majorRadius else dotRadius
+
+            paint.color = when {
+                i == elapsedUnits -> currentColor
+                i < elapsedUnits -> elapsedColor
+                else -> remainingColor
+            }
+
+            shadowPaint.color = paint.color
+            shadowPaint.alpha = if (i == elapsedUnits) 122 else 52
+            canvas.drawCircle(cx, cy + radius * 0.3f, radius * 1.15f, shadowPaint)
+            canvas.drawCircle(cx, cy, radius, paint)
+        }
+
+        return bitmap
+    }
+
+    private fun adjustAlpha(color: Int, alphaFraction: Float): Int {
+        val alpha = (Color.alpha(color) * alphaFraction).toInt().coerceIn(0, 255)
+        return Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
     }
 }

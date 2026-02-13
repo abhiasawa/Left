@@ -4,71 +4,60 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
-import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.background
-import androidx.glance.color.ColorProvider
-import androidx.glance.layout.Alignment
-import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
-import androidx.glance.layout.Row
-import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
-import androidx.glance.text.TextStyle
 import com.timeleft.MainActivity
 import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
 import kotlinx.coroutines.flow.first
 
 /**
- * Home screen widget that shows how many hours remain in the current day
- * using a dot grid. Each dot represents one hour of the 24-hour day.
+ * Day widget rendered as an orbit timeline.
  */
 class DayHourWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val preferences = UserPreferencesRepository(context).preferences.first()
         val style = widgetVisualStyle(preferences)
+        val card = style.cardColors(hueShift = 160f, saturationMul = 1.05f, valueMul = 1.02f, glowAlphaBoost = 1.2f)
 
         val totalHours = TimeCalculations.totalHoursInDay()
         val elapsedHours = TimeCalculations.hoursElapsedInDay()
         val remainingHours = TimeCalculations.hoursLeftInDay()
         val dayLabel = TimeCalculations.dayLabel()
+        val percent = ((elapsedHours.toFloat() / totalHours.coerceAtLeast(1)) * 100f).toInt()
 
-        val dayGridBitmap = WidgetRenderer.renderDotGrid(
-            width = 600,
-            height = 300,
+        val orbitBitmap = WidgetRenderer.renderOrbitDots(
+            width = 760,
+            height = 500,
             totalUnits = totalHours,
             elapsedUnits = elapsedHours,
             elapsedColor = style.elapsedColor,
             remainingColor = style.remainingColor,
             currentColor = style.currentColor,
             backgroundColor = 0x00000000,
-            columns = 8
+            emphasizeEvery = 6
         )
         val backgroundBitmap = WidgetRenderer.renderAtmosphericCard(
-            width = 900,
-            height = 700,
-            startColor = style.cardStart,
-            endColor = style.cardEnd,
-            glowColor = style.cardGlow,
-            borderColor = style.cardBorder
+            width = 1080,
+            height = 1080,
+            startColor = card.start,
+            endColor = card.end,
+            glowColor = card.glow,
+            borderColor = card.border
         )
 
         provideContent {
@@ -76,7 +65,8 @@ class DayHourWidget : GlanceAppWidget() {
                 context = context,
                 dayLabel = dayLabel,
                 remainingHours = remainingHours,
-                dayGridBitmap = dayGridBitmap,
+                percent = percent,
+                orbitBitmap = orbitBitmap,
                 backgroundBitmap = backgroundBitmap,
                 style = style
             )
@@ -84,77 +74,63 @@ class DayHourWidget : GlanceAppWidget() {
     }
 }
 
-/** Glance composable layout for the day/hour progress widget. */
 @Composable
 private fun DayHourWidgetContent(
     context: Context,
     dayLabel: String,
     remainingHours: Int,
-    dayGridBitmap: Bitmap,
+    percent: Int,
+    orbitBitmap: Bitmap,
     backgroundBitmap: Bitmap,
     style: WidgetVisualStyle
 ) {
     val size = LocalSize.current
     val compact = size.width < 130.dp || size.height < 130.dp
-    val fontSize = if (compact) 10.sp else 11.sp
 
     val openAppIntent = Intent(context, MainActivity::class.java).apply {
         putExtra("time_unit", "DAY")
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
 
-    Box(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .cornerRadius(20.dp)
-            .clickable(actionStartActivity(openAppIntent))
+    WidgetSurface(
+        openAppIntent = openAppIntent,
+        backgroundBitmap = backgroundBitmap
     ) {
-        Image(
-            provider = ImageProvider(backgroundBitmap),
-            contentDescription = null,
-            modifier = GlanceModifier.fillMaxSize(),
-            contentScale = ContentScale.FillBounds
-        )
-        Column(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .padding(10.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalAlignment = Alignment.Start
-        ) {
+        Column {
+            WidgetHeader(
+                title = "Day",
+                badge = "$percent%",
+                style = style,
+                compact = compact
+            )
+            Spacer(modifier = GlanceModifier.height(4.dp))
+            WidgetHeroMetric(
+                value = "$remainingHours",
+                label = if (compact) "hours left" else "$dayLabel hours left",
+                style = style,
+                compact = compact
+            )
+            Spacer(modifier = GlanceModifier.height(4.dp))
             Image(
-                provider = ImageProvider(dayGridBitmap),
-                contentDescription = "Day progress",
-                modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                provider = ImageProvider(orbitBitmap),
+                contentDescription = "Day orbit progress",
+                modifier = GlanceModifier
+                    .fillMaxWidth()
+                    .defaultWeight()
+                    .padding(horizontal = 8.dp),
                 contentScale = ContentScale.Fit
             )
-            Row(
-                modifier = GlanceModifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = dayLabel,
-                    style = TextStyle(
-                        color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
-                        fontSize = fontSize,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = GlanceModifier.defaultWeight()
-                )
-                Text(
-                    text = if (compact) "$remainingHours left" else "$remainingHours hours left",
-                    style = TextStyle(
-                        color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
-                        fontSize = fontSize
-                    )
-                )
-            }
+            Spacer(modifier = GlanceModifier.height(4.dp))
+            WidgetFooter(
+                leading = if (compact) "Cycle" else dayLabel,
+                trailing = if (compact) null else "Active hours",
+                style = style,
+                compact = compact
+            )
         }
     }
 }
 
-/** Broadcast receiver that binds [DayHourWidget] to the Android widget framework. */
 class DayHourWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = DayHourWidget()
 }
