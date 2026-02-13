@@ -11,6 +11,7 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -31,7 +32,9 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.timeleft.MainActivity
+import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
+import kotlinx.coroutines.flow.first
 
 /**
  * Home screen widget that displays the current year's progress as a dot grid.
@@ -41,6 +44,9 @@ import com.timeleft.util.TimeCalculations
 class YearProgressWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val preferences = UserPreferencesRepository(context).preferences.first()
+        val style = widgetVisualStyle(preferences)
+
         val totalDays = TimeCalculations.totalDaysInYear()
         val elapsed = TimeCalculations.daysElapsedInYear()
         val remaining = TimeCalculations.daysLeftInYear()
@@ -51,10 +57,18 @@ class YearProgressWidget : GlanceAppWidget() {
             height = 500,
             totalUnits = totalDays,
             elapsedUnits = elapsed,
-            elapsedColor = 0xFF333333.toInt(),
-            remainingColor = 0xFFFFFFFF.toInt(),
-            currentColor = 0xFFFF3B30.toInt(),
+            elapsedColor = style.elapsedColor,
+            remainingColor = style.remainingColor,
+            currentColor = style.currentColor,
             backgroundColor = 0x00000000,
+        )
+        val backgroundBitmap = WidgetRenderer.renderAtmosphericCard(
+            width = 1000,
+            height = 1000,
+            startColor = style.cardStart,
+            endColor = style.cardEnd,
+            glowColor = style.cardGlow,
+            borderColor = style.cardBorder
         )
 
         provideContent {
@@ -62,7 +76,9 @@ class YearProgressWidget : GlanceAppWidget() {
                 context = context,
                 year = year,
                 remaining = remaining,
-                gridBitmap = gridBitmap
+                gridBitmap = gridBitmap,
+                backgroundBitmap = backgroundBitmap,
+                style = style
             )
         }
     }
@@ -74,8 +90,14 @@ private fun YearWidgetContent(
     context: Context,
     year: String,
     remaining: Int,
-    gridBitmap: Bitmap
+    gridBitmap: Bitmap,
+    backgroundBitmap: Bitmap,
+    style: WidgetVisualStyle
 ) {
+    val size = LocalSize.current
+    val compact = size.width < 130.dp || size.height < 130.dp
+    val fontSize = if (compact) 10.sp else 11.sp
+
     val openAppIntent = Intent(context, MainActivity::class.java).apply {
         putExtra("time_unit", "YEAR")
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -85,12 +107,18 @@ private fun YearWidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(20.dp)
-            .background(ColorProvider(Color(0xD91C1C1E), Color(0xD91C1C1E)))
-            .padding(10.dp)
             .clickable(actionStartActivity(openAppIntent))
     ) {
-        Column(
+        Image(
+            provider = ImageProvider(backgroundBitmap),
+            contentDescription = null,
             modifier = GlanceModifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+        )
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(10.dp),
             verticalAlignment = Alignment.Top,
             horizontalAlignment = Alignment.Start
         ) {
@@ -108,17 +136,17 @@ private fun YearWidgetContent(
                 Text(
                     text = year,
                     style = TextStyle(
-                        color = ColorProvider(Color.White, Color.White),
-                        fontSize = 11.sp,
+                        color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
+                        fontSize = fontSize,
                         fontWeight = FontWeight.Bold
                     ),
                     modifier = GlanceModifier.defaultWeight()
                 )
                 Text(
-                    text = "$remaining days left",
+                    text = if (compact) "$remaining left" else "$remaining days left",
                     style = TextStyle(
-                        color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                        fontSize = 11.sp
+                        color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
+                        fontSize = fontSize
                     )
                 )
             }

@@ -11,6 +11,7 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -33,7 +34,9 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.color.ColorProvider
 import com.timeleft.MainActivity
+import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -44,6 +47,9 @@ import java.time.format.DateTimeFormatter
 class YearBarcodeWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val preferences = UserPreferencesRepository(context).preferences.first()
+        val style = widgetVisualStyle(preferences)
+
         val totalDays = TimeCalculations.totalDaysInYear()
         val elapsed = TimeCalculations.daysElapsedInYear()
         val remaining = TimeCalculations.daysLeftInYear()
@@ -60,10 +66,18 @@ class YearBarcodeWidget : GlanceAppWidget() {
             height = 300,
             totalUnits = totalDays,
             elapsedUnits = elapsed,
-            elapsedColor = 0xFF333333.toInt(),
-            remainingColor = 0xFFFFFFFF.toInt(),
-            currentColor = 0xFFFF3B30.toInt(),
+            elapsedColor = style.elapsedColor,
+            remainingColor = style.remainingColor,
+            currentColor = style.currentColor,
             backgroundColor = 0x00000000
+        )
+        val backgroundBitmap = WidgetRenderer.renderAtmosphericCard(
+            width = 1400,
+            height = 900,
+            startColor = style.cardStart,
+            endColor = style.cardEnd,
+            glowColor = style.cardGlow,
+            borderColor = style.cardBorder
         )
 
         provideContent {
@@ -75,7 +89,9 @@ class YearBarcodeWidget : GlanceAppWidget() {
                 year = year,
                 remaining = remaining,
                 percent = percent,
-                barcodeBitmap = barcodeBitmap
+                barcodeBitmap = barcodeBitmap,
+                backgroundBitmap = backgroundBitmap,
+                style = style
             )
         }
     }
@@ -90,8 +106,14 @@ private fun BarcodeWidgetContent(
     year: String,
     remaining: Int,
     percent: Int,
-    barcodeBitmap: Bitmap
+    barcodeBitmap: Bitmap,
+    backgroundBitmap: Bitmap,
+    style: WidgetVisualStyle
 ) {
+    val size = LocalSize.current
+    val compact = size.height < 120.dp
+    val fontSize = if (compact) 10.sp else 11.sp
+
     val openAppIntent = Intent(context, MainActivity::class.java).apply {
         putExtra("time_unit", "YEAR")
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -101,12 +123,18 @@ private fun BarcodeWidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(20.dp)
-            .background(ColorProvider(Color(0xD91C1C1E), Color(0xD91C1C1E)))
-            .padding(10.dp)
             .clickable(actionStartActivity(openAppIntent))
     ) {
+        Image(
+            provider = ImageProvider(backgroundBitmap),
+            contentDescription = null,
+            modifier = GlanceModifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+        )
         Column(
-            modifier = GlanceModifier.fillMaxSize()
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(10.dp)
         ) {
             // Compact date header
             Row(
@@ -116,24 +144,24 @@ private fun BarcodeWidgetContent(
                 Text(
                     text = "$dayOfWeek $dayNum",
                     style = TextStyle(
-                        color = ColorProvider(Color.White, Color.White),
-                        fontSize = 11.sp,
+                        color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
+                        fontSize = fontSize,
                         fontWeight = FontWeight.Medium
                     )
                 )
                 Text(
                     text = "  $month  $year",
                     style = TextStyle(
-                        color = ColorProvider(Color(0xFF666666), Color(0xFF666666)),
-                        fontSize = 11.sp
+                        color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
+                        fontSize = fontSize
                     ),
                     modifier = GlanceModifier.defaultWeight()
                 )
                 Text(
                     text = "$percent%",
                     style = TextStyle(
-                        color = ColorProvider(Color(0xFF666666), Color(0xFF666666)),
-                        fontSize = 11.sp
+                        color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
+                        fontSize = fontSize
                     )
                 )
             }
@@ -158,17 +186,17 @@ private fun BarcodeWidgetContent(
                 Text(
                     text = year,
                     style = TextStyle(
-                        color = ColorProvider(Color(0xFF666666), Color(0xFF666666)),
-                        fontSize = 11.sp,
+                        color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
+                        fontSize = fontSize,
                         fontWeight = FontWeight.Medium
                     ),
                     modifier = GlanceModifier.defaultWeight()
                 )
                 Text(
-                    text = "$remaining days left",
+                    text = if (compact) "$remaining left" else "$remaining days left",
                     style = TextStyle(
-                        color = ColorProvider(Color(0xFF666666), Color(0xFF666666)),
-                        fontSize = 11.sp
+                        color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
+                        fontSize = fontSize
                     )
                 )
             }

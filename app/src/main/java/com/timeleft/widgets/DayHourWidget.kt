@@ -11,6 +11,7 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -31,7 +32,9 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.timeleft.MainActivity
+import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
+import kotlinx.coroutines.flow.first
 
 /**
  * Home screen widget that shows how many hours remain in the current day
@@ -40,6 +43,9 @@ import com.timeleft.util.TimeCalculations
 class DayHourWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val preferences = UserPreferencesRepository(context).preferences.first()
+        val style = widgetVisualStyle(preferences)
+
         val totalHours = TimeCalculations.totalHoursInDay()
         val elapsedHours = TimeCalculations.hoursElapsedInDay()
         val remainingHours = TimeCalculations.hoursLeftInDay()
@@ -50,11 +56,19 @@ class DayHourWidget : GlanceAppWidget() {
             height = 300,
             totalUnits = totalHours,
             elapsedUnits = elapsedHours,
-            elapsedColor = 0xFF333333.toInt(),
-            remainingColor = 0xFFFFFFFF.toInt(),
-            currentColor = 0xFFFF3B30.toInt(),
+            elapsedColor = style.elapsedColor,
+            remainingColor = style.remainingColor,
+            currentColor = style.currentColor,
             backgroundColor = 0x00000000,
             columns = 8
+        )
+        val backgroundBitmap = WidgetRenderer.renderAtmosphericCard(
+            width = 900,
+            height = 700,
+            startColor = style.cardStart,
+            endColor = style.cardEnd,
+            glowColor = style.cardGlow,
+            borderColor = style.cardBorder
         )
 
         provideContent {
@@ -62,7 +76,9 @@ class DayHourWidget : GlanceAppWidget() {
                 context = context,
                 dayLabel = dayLabel,
                 remainingHours = remainingHours,
-                dayGridBitmap = dayGridBitmap
+                dayGridBitmap = dayGridBitmap,
+                backgroundBitmap = backgroundBitmap,
+                style = style
             )
         }
     }
@@ -74,8 +90,14 @@ private fun DayHourWidgetContent(
     context: Context,
     dayLabel: String,
     remainingHours: Int,
-    dayGridBitmap: Bitmap
+    dayGridBitmap: Bitmap,
+    backgroundBitmap: Bitmap,
+    style: WidgetVisualStyle
 ) {
+    val size = LocalSize.current
+    val compact = size.width < 130.dp || size.height < 130.dp
+    val fontSize = if (compact) 10.sp else 11.sp
+
     val openAppIntent = Intent(context, MainActivity::class.java).apply {
         putExtra("time_unit", "DAY")
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -85,12 +107,18 @@ private fun DayHourWidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(20.dp)
-            .background(ColorProvider(Color(0xD91C1C1E), Color(0xD91C1C1E)))
-            .padding(10.dp)
             .clickable(actionStartActivity(openAppIntent))
     ) {
-        Column(
+        Image(
+            provider = ImageProvider(backgroundBitmap),
+            contentDescription = null,
             modifier = GlanceModifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+        )
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(10.dp),
             verticalAlignment = Alignment.Top,
             horizontalAlignment = Alignment.Start
         ) {
@@ -108,17 +136,17 @@ private fun DayHourWidgetContent(
                 Text(
                     text = dayLabel,
                     style = TextStyle(
-                        color = ColorProvider(Color.White, Color.White),
-                        fontSize = 11.sp,
+                        color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
+                        fontSize = fontSize,
                         fontWeight = FontWeight.Bold
                     ),
                     modifier = GlanceModifier.defaultWeight()
                 )
                 Text(
-                    text = "$remainingHours hours left",
+                    text = if (compact) "$remainingHours left" else "$remainingHours hours left",
                     style = TextStyle(
-                        color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                        fontSize = 11.sp
+                        color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
+                        fontSize = fontSize
                     )
                 )
             }

@@ -53,8 +53,9 @@ import com.timeleft.ui.components.ColorPicker
 import com.timeleft.ui.components.DotGrid
 import com.timeleft.ui.components.SymbolPicker
 import com.timeleft.ui.theme.AccentBlue
-import com.timeleft.ui.theme.PresetColors
-import com.timeleft.ui.theme.PresetElapsedColors
+import com.timeleft.ui.theme.ThemePack
+import com.timeleft.ui.theme.themeElapsedColorDefaults
+import com.timeleft.ui.theme.themeRemainingColorDefaults
 import com.timeleft.util.TimeCalculations
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -82,6 +83,7 @@ fun SettingsSheet(
     onSymbolChanged: (SymbolType) -> Unit,
     onElapsedColorChanged: (String) -> Unit,
     onRemainingColorChanged: (String) -> Unit,
+    onThemePackChanged: (ThemePack) -> Unit,
     onDarkModeChanged: (Boolean) -> Unit,
     onNotificationsChanged: (Boolean) -> Unit,
     onDailyNotificationChanged: (Boolean) -> Unit,
@@ -99,6 +101,7 @@ fun SettingsSheet(
     val currentSymbol = SymbolType.fromString(preferences.symbolType)
     val elapsedColor = parseColor(preferences.elapsedColor)
     val remainingColor = parseColor(preferences.remainingColor)
+    val selectedThemePack = ThemePack.fromString(preferences.themePack)
 
     val birthDate = preferences.birthDate
     val gender = preferences.gender
@@ -119,7 +122,7 @@ fun SettingsSheet(
         ) {
             Text(
                 text = "Settings",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Medium
             )
@@ -155,6 +158,18 @@ fun SettingsSheet(
             SettingsDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
+            // ── Theme Pack ────────────────────────────────────────────────
+            SectionLabel("THEME PACK")
+            Spacer(modifier = Modifier.height(8.dp))
+            ThemePackPicker(
+                selected = selectedThemePack,
+                onSelected = onThemePackChanged
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+            SettingsDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+
             // ── Symbol picker ──────────────────────────────────────────────
             SectionLabel("SYMBOL")
             Spacer(modifier = Modifier.height(8.dp))
@@ -173,7 +188,7 @@ fun SettingsSheet(
 
             ColorPicker(
                 label = "Remaining",
-                colors = PresetColors,
+                colors = themeRemainingColorDefaults(selectedThemePack),
                 selectedColor = remainingColor,
                 onColorSelected = { color ->
                     onRemainingColorChanged(colorToHex(color))
@@ -184,7 +199,7 @@ fun SettingsSheet(
 
             ColorPicker(
                 label = "Elapsed",
-                colors = PresetElapsedColors,
+                colors = themeElapsedColorDefaults(selectedThemePack),
                 selectedColor = elapsedColor,
                 onColorSelected = { color ->
                     onElapsedColorChanged(colorToHex(color))
@@ -512,10 +527,10 @@ private fun GlassSection(content: @Composable () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f))
+            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.04f),
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(16.dp)
@@ -535,7 +550,12 @@ private fun GlassField(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.04f))
+            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f))
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f),
+                shape = RoundedCornerShape(12.dp)
+            )
             .clickable(onClick = onClick)
             .padding(16.dp)
     ) {
@@ -565,9 +585,9 @@ private fun SectionLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
         letterSpacing = 1.5.sp,
-        fontWeight = FontWeight.Medium
+        fontWeight = FontWeight.SemiBold
     )
 }
 
@@ -588,7 +608,11 @@ private fun SettingsToggle(
     subtitle: String? = null
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.04f))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -609,7 +633,7 @@ private fun SettingsToggle(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.onBackground,
+                checkedThumbColor = MaterialTheme.colorScheme.background,
                 checkedTrackColor = AccentBlue,
                 checkedBorderColor = AccentBlue,
                 uncheckedThumbColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
@@ -617,6 +641,56 @@ private fun SettingsToggle(
                 uncheckedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
             )
         )
+    }
+}
+
+@Composable
+private fun ThemePackPicker(
+    selected: ThemePack,
+    onSelected: (ThemePack) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        ThemePack.entries.forEach { themePack ->
+            val isSelected = themePack == selected
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        if (isSelected) {
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.16f)
+                        } else {
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f)
+                        }
+                    )
+                    .border(
+                        width = if (isSelected) 1.5.dp else 1.dp,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.32f)
+                        } else {
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                        },
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                    .clickable { onSelected(themePack) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = themePack.title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.onBackground
+                    } else {
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    },
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                )
+            }
+        }
     }
 }
 

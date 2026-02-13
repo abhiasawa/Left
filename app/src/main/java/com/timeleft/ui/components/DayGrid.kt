@@ -1,10 +1,9 @@
 package com.timeleft.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,7 +40,7 @@ fun DayGrid(
         animationProgress.snapTo(0f)
         animationProgress.animateTo(
             1f,
-            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+            tween(durationMillis = 680, easing = FastOutSlowInEasing)
         )
     }
 
@@ -49,7 +48,7 @@ fun DayGrid(
     LaunchedEffect(Unit) {
         glowPulse.animateTo(
             1f,
-            infiniteRepeatable(tween(1200), RepeatMode.Reverse)
+            infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse)
         )
     }
 
@@ -76,7 +75,7 @@ fun DayGrid(
                 else -> remainingColor
             }
 
-            val itemProgress = ((animationProgress.value - i * 0.01f) / 0.5f).coerceIn(0f, 1f)
+            val itemProgress = ((animationProgress.value - i * 0.008f) / 0.66f).coerceIn(0f, 1f)
             // Every 6th hour is a quadrant marker (larger dot)
             val isQuadrant = i % 6 == 0
             val r = (if (isQuadrant) bigDotRadius else dotRadius) * itemProgress

@@ -15,47 +15,51 @@ import androidx.core.view.WindowCompat
 // ── Color schemes ────────────────────────────────────────────────────
 // Each scheme maps the app's custom palette to Material 3 semantic slots.
 
-private val DarkColorScheme = darkColorScheme(
-    primary = DotRemainingDark,
-    onPrimary = Black,
-    primaryContainer = DarkSurfaceVariant,
-    onPrimaryContainer = DotRemainingDark,
-    secondary = AccentBlue,
-    onSecondary = Black,
-    secondaryContainer = DarkSurfaceVariant,
-    onSecondaryContainer = AccentBlue,
-    tertiary = AccentPurple,
-    onTertiary = Black,
-    background = Black,
-    onBackground = DotRemainingDark,
-    surface = Black,
-    onSurface = DotRemainingDark,
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextSecondaryDark,
-    outline = DotElapsedDark,
-    outlineVariant = Color(0xFF2C2C2E),
-)
+private fun darkScheme(themePack: ThemePack) = appPalette(themePack, darkTheme = true).let { palette ->
+    darkColorScheme(
+        primary = palette.accent,
+        onPrimary = palette.background,
+        primaryContainer = palette.surfaceVariant,
+        onPrimaryContainer = palette.textPrimary,
+        secondary = palette.textPrimary,
+        onSecondary = palette.background,
+        secondaryContainer = palette.surfaceVariant,
+        onSecondaryContainer = palette.textPrimary,
+        tertiary = palette.accent,
+        onTertiary = palette.background,
+        background = palette.background,
+        onBackground = palette.textPrimary,
+        surface = palette.surface,
+        onSurface = palette.textPrimary,
+        surfaceVariant = palette.surfaceVariant,
+        onSurfaceVariant = palette.textSecondary,
+        outline = palette.border,
+        outlineVariant = palette.border.copy(alpha = 0.6f),
+    )
+}
 
-private val LightColorScheme = lightColorScheme(
-    primary = DotRemainingLight,
-    onPrimary = White,
-    primaryContainer = LightSurfaceVariant,
-    onPrimaryContainer = DotRemainingLight,
-    secondary = AccentBlue,
-    onSecondary = White,
-    secondaryContainer = LightSurfaceVariant,
-    onSecondaryContainer = AccentBlue,
-    tertiary = AccentPurple,
-    onTertiary = White,
-    background = LightSurface,
-    onBackground = DotRemainingLight,
-    surface = White,
-    onSurface = DotRemainingLight,
-    surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = TextSecondaryLight,
-    outline = DotElapsedLight,
-    outlineVariant = Color(0xFFD1D1D6),
-)
+private fun lightScheme(themePack: ThemePack) = appPalette(themePack, darkTheme = false).let { palette ->
+    lightColorScheme(
+        primary = palette.accent,
+        onPrimary = palette.surface,
+        primaryContainer = palette.surfaceVariant,
+        onPrimaryContainer = palette.textPrimary,
+        secondary = palette.textPrimary,
+        onSecondary = palette.surface,
+        secondaryContainer = palette.surfaceVariant,
+        onSecondaryContainer = palette.textPrimary,
+        tertiary = palette.accent,
+        onTertiary = palette.surface,
+        background = palette.background,
+        onBackground = palette.textPrimary,
+        surface = palette.surface,
+        onSurface = palette.textPrimary,
+        surfaceVariant = palette.surfaceVariant,
+        onSurfaceVariant = palette.textSecondary,
+        outline = palette.border,
+        outlineVariant = palette.border.copy(alpha = 0.6f),
+    )
+}
 
 /**
  * Top-level theme wrapper for the entire app.
@@ -68,9 +72,10 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun TimeLeftTheme(
     darkTheme: Boolean = true,
+    themePack: ThemePack = ThemePack.NOIR,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = if (darkTheme) darkScheme(themePack) else lightScheme(themePack)
 
     val view = LocalView.current
     if (!view.isInEditMode) {

@@ -4,7 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Shader
 import android.graphics.Typeface
 import androidx.core.content.FileProvider
 import com.timeleft.domain.models.SymbolType
@@ -12,18 +15,18 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.ceil
 import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
- * Generates a shareable image of the current dot-grid progress and
- * launches the Android share sheet.
- *
- * The flow is: render bitmap → save to cache dir → share via [FileProvider].
+ * Generates a shareable image of the current progress and launches the Android share sheet.
  */
 object ShareHelper {
 
     /**
-     * Creates a dot-grid snapshot image and opens the system share sheet.
+     * Creates a snapshot image and opens the system share sheet.
      * The image is saved temporarily in the app's cache directory.
      */
     fun shareTimeLeft(
@@ -72,8 +75,7 @@ object ShareHelper {
     }
 
     /**
-     * Renders the dot grid onto an Android [Bitmap] using the Canvas API.
-     * Used both for sharing and for widget previews.
+     * Renders a cinematic, screenshot-friendly grid snapshot.
      */
     fun renderGrid(
         totalUnits: Int,
@@ -85,57 +87,110 @@ object ShareHelper {
         remainingColor: Int,
         backgroundColor: Int,
         currentColor: Int,
-        width: Int = 1080,
-        columns: Int = 18
+        width: Int = 1440,
+        columns: Int = 0
     ): Bitmap {
-        val dotRadius = 14f
-        val spacing = 8f
-        val cellSize = (dotRadius * 2) + spacing
-        val padding = 60f
-        val headerHeight = 120f
+        val usableWidth = width * 0.86f
+        val effectiveColumns = computeColumns(totalUnits, usableWidth, columns)
+        val cellSize = (usableWidth / effectiveColumns).coerceIn(32f, 56f)
+        val dotRadius = cellSize * 0.34f
+        val spacing = cellSize * 0.16f
+        val drawCell = dotRadius * 2f + spacing
 
-        val rows = ceil(totalUnits.toFloat() / columns).toInt()
-        val gridHeight = rows * cellSize
-        val height = (headerHeight + gridHeight + padding * 3).toInt()
+        val rows = ceil(totalUnits.toFloat() / effectiveColumns).toInt().coerceAtLeast(1)
+        val gridHeight = rows * drawCell
 
+        val sidePadding = width * 0.08f
+        val headerTop = 98f
+        val headerHeight = 170f
+        val panelPadding = 28f
+        val bottomPadding = 110f
+
+        val height = (headerTop + headerHeight + gridHeight + panelPadding * 2f + bottomPadding).toInt()
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // Background
-        canvas.drawColor(backgroundColor)
-
-        // Header text
-        val labelPaint = Paint().apply {
-            color = remainingColor
-            textSize = 42f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            isAntiAlias = true
+        // Atmospheric background for social/award screenshots.
+        val bgStart = shiftColor(backgroundColor, 1.18f)
+        val bgEnd = shiftColor(backgroundColor, 0.82f)
+        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = LinearGradient(
+                0f, 0f, width.toFloat(), height.toFloat(),
+                bgStart,
+                bgEnd,
+                Shader.TileMode.CLAMP
+            )
         }
-        canvas.drawText(label, padding, padding + 42f, labelPaint)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
 
-        val subtitlePaint = Paint().apply {
+        val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = android.graphics.RadialGradient(
+                width * 0.28f,
+                height * 0.24f,
+                max(width, height) * 0.72f,
+                withAlpha(currentColor, 85),
+                android.graphics.Color.TRANSPARENT,
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), glowPaint)
+
+        // Hero panel to keep composition stable across screen ratios.
+        val panelTop = headerTop + 24f
+        val panelRect = RectF(
+            sidePadding,
+            panelTop,
+            width - sidePadding,
+            panelTop + headerHeight + gridHeight + panelPadding * 2
+        )
+        val panelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = withAlpha(shiftColor(backgroundColor, 1.32f), 205)
+        }
+        val panelStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+            color = withAlpha(remainingColor, 64)
+        }
+        canvas.drawRoundRect(panelRect, 34f, 34f, panelPaint)
+        canvas.drawRoundRect(panelRect, 34f, 34f, panelStroke)
+
+        val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = remainingColor
-            textSize = 32f
-            alpha = 150
-            isAntiAlias = true
+            textSize = 62f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            letterSpacing = 0.02f
+        }
+        canvas.drawText(label, panelRect.left + panelPadding, panelRect.top + 74f, labelPaint)
+
+        val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = withAlpha(remainingColor, 190)
+            textSize = 37f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         }
         val subtitleWidth = subtitlePaint.measureText(remainingText)
-        canvas.drawText(remainingText, width - padding - subtitleWidth, padding + 42f, subtitlePaint)
+        canvas.drawText(
+            remainingText,
+            panelRect.right - panelPadding - subtitleWidth,
+            panelRect.top + 74f,
+            subtitlePaint
+        )
 
-        // Grid
-        val gridOffsetX = (width - (columns * cellSize - spacing)) / 2f
-        val gridOffsetY = headerHeight + padding
+        val gridWidth = effectiveColumns * drawCell - spacing
+        val gridOffsetX = (width - gridWidth) / 2f
+        val gridOffsetY = panelRect.top + headerHeight + panelPadding
 
-        val paint = Paint().apply {
-            isAntiAlias = true
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+        }
+        val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
         }
 
         for (i in 0 until totalUnits) {
-            val col = i % columns
-            val row = i / columns
-            val cx = gridOffsetX + col * cellSize + dotRadius
-            val cy = gridOffsetY + row * cellSize + dotRadius
+            val col = i % effectiveColumns
+            val row = i / effectiveColumns
+            val cx = gridOffsetX + col * drawCell + dotRadius
+            val cy = gridOffsetY + row * drawCell + dotRadius
 
             val isElapsed = i < elapsedUnits
             val isCurrent = i == elapsedUnits
@@ -146,12 +201,20 @@ object ShareHelper {
                 else -> remainingColor
             }
 
+            shadowPaint.color = paint.color
+            shadowPaint.alpha = if (isCurrent) 110 else 64
+            canvas.drawCircle(cx, cy + dotRadius * 0.32f, dotRadius * 1.2f, shadowPaint)
+
             when (symbolType) {
                 SymbolType.DOT -> canvas.drawCircle(cx, cy, dotRadius, paint)
                 SymbolType.SQUARE -> canvas.drawRect(
-                    cx - dotRadius, cy - dotRadius,
-                    cx + dotRadius, cy + dotRadius, paint
+                    cx - dotRadius,
+                    cy - dotRadius,
+                    cx + dotRadius,
+                    cy + dotRadius,
+                    paint
                 )
+
                 SymbolType.DIAMOND -> {
                     val path = android.graphics.Path().apply {
                         moveTo(cx, cy - dotRadius)
@@ -162,6 +225,7 @@ object ShareHelper {
                     }
                     canvas.drawPath(path, paint)
                 }
+
                 SymbolType.STAR -> {
                     val path = android.graphics.Path()
                     val outer = dotRadius
@@ -176,6 +240,7 @@ object ShareHelper {
                     path.close()
                     canvas.drawPath(path, paint)
                 }
+
                 SymbolType.HEXAGON -> {
                     val path = android.graphics.Path()
                     for (j in 0 until 6) {
@@ -187,36 +252,58 @@ object ShareHelper {
                     path.close()
                     canvas.drawPath(path, paint)
                 }
+
                 SymbolType.HEART -> {
                     canvas.drawCircle(cx, cy, dotRadius * 0.7f, paint)
                 }
+
                 SymbolType.WORD -> {
-                    val textPaint = Paint().apply {
+                    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = paint.color
                         textSize = dotRadius * 1.2f
                         textAlign = Paint.Align.CENTER
                         typeface = Typeface.DEFAULT_BOLD
-                        isAntiAlias = true
                     }
-                    canvas.drawText(
-                        (i + 1).toString(), cx,
-                        cy + dotRadius * 0.4f, textPaint
-                    )
+                    canvas.drawText((i + 1).toString(), cx, cy + dotRadius * 0.4f, textPaint)
                 }
             }
         }
 
-        // Watermark
-        val watermarkPaint = Paint().apply {
-            color = remainingColor
-            textSize = 24f
-            alpha = 80
-            isAntiAlias = true
+        val watermarkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = withAlpha(remainingColor, 130)
+            textSize = 27f
+            letterSpacing = 0.05f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
-        val watermark = "TimeLeft"
+        val watermark = "LEFT"
         val wmWidth = watermarkPaint.measureText(watermark)
-        canvas.drawText(watermark, (width - wmWidth) / 2f, height - padding / 2f, watermarkPaint)
+        canvas.drawText(watermark, (width - wmWidth) / 2f, height - 42f, watermarkPaint)
 
         return bitmap
+    }
+
+    private fun computeColumns(totalUnits: Int, usableWidth: Float, providedColumns: Int): Int {
+        if (providedColumns > 0) return providedColumns
+        if (totalUnits <= 0) return 12
+
+        val estimate = sqrt((totalUnits * (usableWidth / 920f)).toDouble()).toInt()
+        return estimate.coerceIn(9, min(28, max(9, totalUnits)))
+    }
+
+    private fun withAlpha(color: Int, alpha: Int): Int {
+        val a = alpha.coerceIn(0, 255)
+        return android.graphics.Color.argb(
+            a,
+            android.graphics.Color.red(color),
+            android.graphics.Color.green(color),
+            android.graphics.Color.blue(color)
+        )
+    }
+
+    private fun shiftColor(color: Int, factor: Float): Int {
+        val r = (android.graphics.Color.red(color) * factor).toInt().coerceIn(0, 255)
+        val g = (android.graphics.Color.green(color) * factor).toInt().coerceIn(0, 255)
+        val b = (android.graphics.Color.blue(color) * factor).toInt().coerceIn(0, 255)
+        return android.graphics.Color.rgb(r, g, b)
     }
 }

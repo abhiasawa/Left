@@ -19,28 +19,34 @@ val InterFontFamily = FontFamily(
     Font(R.font.inter_bold, FontWeight.Bold)
 )
 
+/**
+ * Display family for large hero labels.
+ * Uses a serif default to contrast the geometric UI type.
+ */
+val DisplayFontFamily = FontFamily.Serif
+
 /** Material 3 typography scale — every style uses [InterFontFamily]. */
 val Typography = Typography(
     displayLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Light,
-        fontSize = 57.sp,
-        lineHeight = 64.sp,
-        letterSpacing = (-0.25).sp
+        fontFamily = DisplayFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 62.sp,
+        lineHeight = 66.sp,
+        letterSpacing = (-1.2).sp
     ),
     displayMedium = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Light,
-        fontSize = 45.sp,
+        fontFamily = DisplayFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 48.sp,
         lineHeight = 52.sp,
-        letterSpacing = 0.sp
+        letterSpacing = (-0.8).sp
     ),
     displaySmall = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
-        letterSpacing = 0.sp
+        fontFamily = DisplayFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 38.sp,
+        lineHeight = 42.sp,
+        letterSpacing = (-0.4).sp
     ),
     headlineLarge = TextStyle(
         fontFamily = InterFontFamily,

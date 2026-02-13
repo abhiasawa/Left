@@ -26,6 +26,7 @@ object PreferenceKeys {
     val ELAPSED_COLOR = stringPreferencesKey("elapsed_color")
     val REMAINING_COLOR = stringPreferencesKey("remaining_color")
     val CURRENT_INDICATOR_COLOR = stringPreferencesKey("current_indicator_color")
+    val THEME_PACK = stringPreferencesKey("theme_pack")
     val DARK_MODE = booleanPreferencesKey("dark_mode")
     val ACTIVE_HOURS_START = intPreferencesKey("active_hours_start")
     val ACTIVE_HOURS_END = intPreferencesKey("active_hours_end")
@@ -52,6 +53,7 @@ data class UserPreferencesData(
     val elapsedColor: String = "#3A3A3A",
     val remainingColor: String = "#FFFFFF",
     val currentIndicatorColor: String = "#FF3B30",
+    val themePack: String = "NOIR",
     val darkMode: Boolean = true,
     val activeHoursStart: Int = 0,
     val activeHoursEnd: Int = 24,
@@ -84,6 +86,7 @@ class UserPreferencesRepository(private val context: Context) {
             elapsedColor = prefs[PreferenceKeys.ELAPSED_COLOR] ?: "#3A3A3A",
             remainingColor = prefs[PreferenceKeys.REMAINING_COLOR] ?: "#FFFFFF",
             currentIndicatorColor = prefs[PreferenceKeys.CURRENT_INDICATOR_COLOR] ?: "#FF3B30",
+            themePack = prefs[PreferenceKeys.THEME_PACK] ?: "NOIR",
             darkMode = prefs[PreferenceKeys.DARK_MODE] ?: true,
             activeHoursStart = prefs[PreferenceKeys.ACTIVE_HOURS_START] ?: 0,
             activeHoursEnd = prefs[PreferenceKeys.ACTIVE_HOURS_END] ?: 24,
@@ -131,6 +134,12 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun updateCurrentIndicatorColor(colorHex: String) {
         context.dataStore.edit { prefs ->
             prefs[PreferenceKeys.CURRENT_INDICATOR_COLOR] = colorHex
+        }
+    }
+
+    suspend fun updateThemePack(themePack: String) {
+        context.dataStore.edit { prefs ->
+            prefs[PreferenceKeys.THEME_PACK] = themePack
         }
     }
 

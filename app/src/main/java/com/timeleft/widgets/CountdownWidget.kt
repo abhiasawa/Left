@@ -11,6 +11,7 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -34,7 +35,9 @@ import androidx.glance.text.TextStyle
 import androidx.glance.color.ColorProvider
 import com.timeleft.MainActivity
 import com.timeleft.data.db.AppDatabase
+import com.timeleft.data.preferences.UserPreferencesRepository
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -46,6 +49,8 @@ import java.time.temporal.ChronoUnit
 class CountdownWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val preferences = UserPreferencesRepository(context).preferences.first()
+        val style = widgetVisualStyle(preferences)
         val db = AppDatabase.getDatabase(context)
         val dates = db.customDateDao().getAllCustomDates().firstOrNull() ?: emptyList()
         val now = LocalDate.now()
@@ -64,7 +69,7 @@ class CountdownWidget : GlanceAppWidget() {
         val colorInt = try {
             android.graphics.Color.parseColor(entity?.colorHex ?: "#FFFFFF")
         } catch (e: Exception) {
-            android.graphics.Color.WHITE
+            style.remainingColor
         }
 
         // Dot grid: elapsed dots are dark, remaining dots use the event's accent color
@@ -73,10 +78,18 @@ class CountdownWidget : GlanceAppWidget() {
             height = 400,
             totalUnits = total,
             elapsedUnits = elapsed,
-            elapsedColor = 0xFF333333.toInt(),
+            elapsedColor = style.elapsedColor,
             remainingColor = colorInt,
-            currentColor = 0xFFFF3B30.toInt(),
+            currentColor = style.currentColor,
             backgroundColor = 0x00000000
+        )
+        val backgroundBitmap = WidgetRenderer.renderAtmosphericCard(
+            width = 900,
+            height = 900,
+            startColor = style.cardStart,
+            endColor = style.cardEnd,
+            glowColor = style.cardGlow,
+            borderColor = style.cardBorder
         )
 
         provideContent {
@@ -85,7 +98,9 @@ class CountdownWidget : GlanceAppWidget() {
                 name = name,
                 remaining = remaining,
                 gridBitmap = gridBitmap,
-                hasCountdown = entity != null
+                hasCountdown = entity != null,
+                backgroundBitmap = backgroundBitmap,
+                style = style
             )
         }
     }
@@ -98,8 +113,14 @@ private fun CountdownWidgetContent(
     name: String,
     remaining: Int,
     gridBitmap: Bitmap,
-    hasCountdown: Boolean
+    hasCountdown: Boolean,
+    backgroundBitmap: Bitmap,
+    style: WidgetVisualStyle
 ) {
+    val size = LocalSize.current
+    val compact = size.width < 130.dp || size.height < 130.dp
+    val fontSize = if (compact) 10.sp else 11.sp
+    val tertiarySecondary = Color(style.textSecondary).copy(alpha = 0.7f)
     val openAppIntent = Intent(context, MainActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
@@ -108,12 +129,18 @@ private fun CountdownWidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(20.dp)
-            .background(ColorProvider(Color(0xD91C1C1E), Color(0xD91C1C1E)))
-            .padding(10.dp)
             .clickable(actionStartActivity(openAppIntent))
     ) {
-        Column(
+        Image(
+            provider = ImageProvider(backgroundBitmap),
+            contentDescription = null,
             modifier = GlanceModifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+        )
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(10.dp),
             verticalAlignment = Alignment.Top,
             horizontalAlignment = Alignment.Start
         ) {
@@ -132,18 +159,18 @@ private fun CountdownWidgetContent(
                     Text(
                         text = name,
                         style = TextStyle(
-                            color = ColorProvider(Color.White, Color.White),
-                            fontSize = 11.sp,
+                            color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
+                            fontSize = fontSize,
                             fontWeight = FontWeight.Bold
                         ),
                         maxLines = 1,
                         modifier = GlanceModifier.defaultWeight()
                     )
                     Text(
-                        text = "$remaining days left",
+                        text = if (compact) "$remaining left" else "$remaining days left",
                         style = TextStyle(
-                            color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                            fontSize = 11.sp
+                            color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
+                            fontSize = fontSize
                         )
                     )
                 }
@@ -152,16 +179,16 @@ private fun CountdownWidgetContent(
                 Text(
                     text = "No countdown",
                     style = TextStyle(
-                        color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                        fontSize = 11.sp
+                        color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
+                        fontSize = fontSize
                     )
                 )
                 Spacer(modifier = GlanceModifier.height(2.dp))
                 Text(
                     text = "Add one in the app",
                     style = TextStyle(
-                        color = ColorProvider(Color(0xFF555555), Color(0xFF555555)),
-                        fontSize = 11.sp
+                        color = ColorProvider(tertiarySecondary, tertiarySecondary),
+                        fontSize = fontSize
                     )
                 )
             }

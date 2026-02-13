@@ -31,9 +31,7 @@ import com.timeleft.domain.models.TimeUnit
 /**
  * Horizontal glass strip containing time-unit labels.
  *
- * Selection state is communicated purely through opacity and weight — no sliding
- * pill indicator, no background shapes. The glass strip grounds the labels visually
- * while staying barely perceptible.
+ * Selection state is represented by a high-contrast capsule for a stronger visual anchor.
  */
 @Composable
 fun TimeSelector(
@@ -43,36 +41,35 @@ fun TimeSelector(
     showLifeOption: Boolean = true
 ) {
     val units = if (showLifeOption) TimeUnit.entries else TimeUnit.entries.filter { it != TimeUnit.LIFE }
-    val selectedIndex = units.indexOf(selectedUnit).coerceAtLeast(0)
     val haptic = LocalHapticFeedback.current
 
-    // Glass strip container
+    // Layered strip container
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f))
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.04f),
-                shape = RoundedCornerShape(16.dp)
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(18.dp)
             )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp),
+                .padding(horizontal = 6.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            units.forEachIndexed { index, unit ->
-                val isSelected = index == selectedIndex
+            units.forEach { unit ->
+                val isSelected = unit == selectedUnit
                 val textColor by animateColorAsState(
                     targetValue = if (isSelected) {
-                        MaterialTheme.colorScheme.onBackground
+                        MaterialTheme.colorScheme.background
                     } else {
-                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.20f)
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.52f)
                     },
                     animationSpec = tween(200),
                     label = "selectorText"
@@ -80,7 +77,14 @@ fun TimeSelector(
 
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.onBackground
+                            } else {
+                                Color.Transparent
+                            }
+                        )
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
@@ -88,15 +92,15 @@ fun TimeSelector(
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onUnitSelected(unit)
                         }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = unit.displayName,
                         color = textColor,
                         fontSize = 13.sp,
-                        fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
-                        letterSpacing = 1.sp
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                        letterSpacing = 0.4.sp
                     )
                 }
             }

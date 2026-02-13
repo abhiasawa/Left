@@ -1,10 +1,9 @@
 package com.timeleft.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -63,16 +62,16 @@ fun DotGrid(
     val dotSizePx = with(density) { dotSize.toPx() }
     val spacingPx = with(density) { spacing.toPx() }
 
-    // Staggered entrance animation with spring physics
+    // Staggered entrance animation
     val animationProgress = remember(totalUnits, elapsedUnits) { Animatable(0f) }
     LaunchedEffect(totalUnits, elapsedUnits) {
         if (animateOnChange) {
             animationProgress.snapTo(0f)
             animationProgress.animateTo(
                 1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
+                animationSpec = tween(
+                    durationMillis = 880,
+                    easing = FastOutSlowInEasing
                 )
             )
         } else {
@@ -86,7 +85,7 @@ fun DotGrid(
         glowPulse.animateTo(
             1f,
             animationSpec = infiniteRepeatable(
-                animation = tween(1200),
+                animation = tween(1400, easing = FastOutSlowInEasing),
                 repeatMode = RepeatMode.Reverse
             )
         )
@@ -134,7 +133,7 @@ fun DotGrid(
 
                 val itemProgress = if (animateOnChange) {
                     val delay = i.toFloat() / totalUnits
-                    ((animationProgress.value - delay * 0.3f) / 0.7f).coerceIn(0f, 1f)
+                    ((animationProgress.value - delay * 0.22f) / 0.78f).coerceIn(0f, 1f)
                 } else 1f
 
                 val scale = itemProgress
@@ -184,7 +183,7 @@ fun DotGrid(
 
                 val itemProgress = if (animateOnChange) {
                     val delay = i.toFloat() / totalUnits
-                    ((animationProgress.value - delay * 0.3f) / 0.7f).coerceIn(0f, 1f)
+                    ((animationProgress.value - delay * 0.22f) / 0.78f).coerceIn(0f, 1f)
                 } else 1f
 
                 val scale = itemProgress

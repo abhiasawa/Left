@@ -11,6 +11,7 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -44,6 +45,7 @@ class LifeProgressWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val prefs = UserPreferencesRepository(context).preferences.first()
+        val style = widgetVisualStyle(prefs)
         val birthDate = prefs.birthDate
         val lifespan = prefs.expectedLifespan
 
@@ -60,11 +62,19 @@ class LifeProgressWidget : GlanceAppWidget() {
             height = 400,
             totalUnits = lifespan,
             elapsedUnits = yearsLived,
-            elapsedColor = 0xFF333333.toInt(),
-            remainingColor = 0xFFFFFFFF.toInt(),
-            currentColor = 0xFFFF3B30.toInt(),
+            elapsedColor = style.elapsedColor,
+            remainingColor = style.remainingColor,
+            currentColor = style.currentColor,
             backgroundColor = 0x00000000,
             columns = 10
+        )
+        val backgroundBitmap = WidgetRenderer.renderAtmosphericCard(
+            width = 900,
+            height = 900,
+            startColor = style.cardStart,
+            endColor = style.cardEnd,
+            glowColor = style.cardGlow,
+            borderColor = style.cardBorder
         )
 
         provideContent {
@@ -72,7 +82,9 @@ class LifeProgressWidget : GlanceAppWidget() {
                 context = context,
                 yearsRemaining = yearsRemaining,
                 gridBitmap = gridBitmap,
-                hasBirthDate = birthDate != null
+                hasBirthDate = birthDate != null,
+                backgroundBitmap = backgroundBitmap,
+                style = style
             )
         }
     }
@@ -84,8 +96,14 @@ private fun LifeWidgetContent(
     context: Context,
     yearsRemaining: Int,
     gridBitmap: Bitmap,
-    hasBirthDate: Boolean
+    hasBirthDate: Boolean,
+    backgroundBitmap: Bitmap,
+    style: WidgetVisualStyle
 ) {
+    val size = LocalSize.current
+    val compact = size.width < 130.dp || size.height < 130.dp
+    val fontSize = if (compact) 10.sp else 11.sp
+
     val openAppIntent = Intent(context, MainActivity::class.java).apply {
         putExtra("time_unit", "LIFE")
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -95,12 +113,18 @@ private fun LifeWidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(20.dp)
-            .background(ColorProvider(Color(0xD91C1C1E), Color(0xD91C1C1E)))
-            .padding(10.dp)
             .clickable(actionStartActivity(openAppIntent))
     ) {
-        Column(
+        Image(
+            provider = ImageProvider(backgroundBitmap),
+            contentDescription = null,
             modifier = GlanceModifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+        )
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(10.dp),
             verticalAlignment = Alignment.Top,
             horizontalAlignment = Alignment.Start
         ) {
@@ -118,17 +142,21 @@ private fun LifeWidgetContent(
                 Text(
                     text = "Life",
                     style = TextStyle(
-                        color = ColorProvider(Color.White, Color.White),
-                        fontSize = 11.sp,
+                        color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
+                        fontSize = fontSize,
                         fontWeight = FontWeight.Bold
                     ),
                     modifier = GlanceModifier.defaultWeight()
                 )
                 Text(
-                    text = if (hasBirthDate) "$yearsRemaining years left" else "Set birth date",
+                    text = if (hasBirthDate) {
+                        if (compact) "$yearsRemaining left" else "$yearsRemaining years left"
+                    } else {
+                        "Set birth date"
+                    },
                     style = TextStyle(
-                        color = ColorProvider(Color(0xFF8E8E93), Color(0xFF8E8E93)),
-                        fontSize = 11.sp
+                        color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
+                        fontSize = fontSize
                     )
                 )
             }

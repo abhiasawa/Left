@@ -1,10 +1,9 @@
 package com.timeleft.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,7 +38,7 @@ fun WeekView(
         animationProgress.snapTo(0f)
         animationProgress.animateTo(
             1f,
-            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+            tween(durationMillis = 620, easing = FastOutSlowInEasing)
         )
     }
 
@@ -47,7 +46,7 @@ fun WeekView(
     LaunchedEffect(Unit) {
         glowPulse.animateTo(
             1f,
-            infiniteRepeatable(tween(1200), RepeatMode.Reverse)
+            infiniteRepeatable(tween(1350, easing = FastOutSlowInEasing), RepeatMode.Reverse)
         )
     }
 
@@ -77,7 +76,7 @@ fun WeekView(
                 else -> remainingColor
             }
 
-            val itemProgress = ((animationProgress.value - i * 0.08f) / 0.5f).coerceIn(0f, 1f)
+            val itemProgress = ((animationProgress.value - i * 0.06f) / 0.7f).coerceIn(0f, 1f)
             val r = dotRadius * itemProgress
 
             if (r > 0f) {

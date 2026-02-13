@@ -2,8 +2,11 @@ package com.timeleft.widgets
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.RadialGradient
+import android.graphics.Shader
 import kotlin.math.ceil
 import kotlin.math.sqrt
 
@@ -13,6 +16,57 @@ import kotlin.math.sqrt
  * resulting [Bitmap] can be displayed in Glance widget RemoteViews.
  */
 object WidgetRenderer {
+
+    /**
+     * Renders a rounded atmospheric card background with linear + radial gradients.
+     */
+    fun renderAtmosphericCard(
+        width: Int,
+        height: Int,
+        startColor: Int,
+        endColor: Int,
+        glowColor: Int,
+        borderColor: Int,
+        cornerRadius: Float = 42f
+    ): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val rect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+
+        val basePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = LinearGradient(
+                0f, 0f, width.toFloat(), height.toFloat(),
+                startColor, endColor, Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, basePaint)
+
+        val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = RadialGradient(
+                width * 0.25f,
+                height * 0.22f,
+                maxOf(width, height) * 0.7f,
+                glowColor,
+                android.graphics.Color.TRANSPARENT,
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, glowPaint)
+
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+            color = borderColor
+        }
+        canvas.drawRoundRect(
+            RectF(1f, 1f, width - 1f, height - 1f),
+            cornerRadius,
+            cornerRadius,
+            borderPaint
+        )
+
+        return bitmap
+    }
 
     /**
      * Renders a grid of dots where each dot represents one time unit.
@@ -66,6 +120,10 @@ object WidgetRenderer {
             isAntiAlias = true
             style = Paint.Style.FILL
         }
+        val shadowPaint = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
 
         for (i in 0 until totalUnits) {
             val col = i % effectiveCols
@@ -80,6 +138,9 @@ object WidgetRenderer {
                 else -> remainingColor
             }
 
+            shadowPaint.color = paint.color
+            shadowPaint.alpha = if (i == elapsedUnits) 110 else 56
+            canvas.drawCircle(cx, cy + effectiveRadius * 0.28f, effectiveRadius * 1.18f, shadowPaint)
             canvas.drawCircle(cx, cy, effectiveRadius, paint)
         }
 
@@ -152,6 +213,10 @@ object WidgetRenderer {
             isAntiAlias = true
             style = Paint.Style.FILL
         }
+        val shadowPaint = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
 
         for (i in 0 until totalUnits) {
             paint.color = when {
@@ -163,6 +228,9 @@ object WidgetRenderer {
             // Elapsed bars are half-height so they visually recede
             val barH = if (i < elapsedUnits) height * 0.5f else height.toFloat()
             val top = height - barH
+            shadowPaint.color = paint.color
+            shadowPaint.alpha = 36
+            canvas.drawRect(left, (top + 3f).coerceAtMost(height.toFloat()), left + barDrawWidth, height.toFloat(), shadowPaint)
             canvas.drawRect(left, top, left + barDrawWidth, height.toFloat(), paint)
         }
 
@@ -209,6 +277,13 @@ object WidgetRenderer {
             style = Paint.Style.STROKE
             this.strokeWidth = strokeWidth
         }
+        val glowPaint = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.STROKE
+            this.strokeWidth = strokeWidth * 1.7f
+            color = remainingColor
+            alpha = 48
+        }
 
         val padding = strokeWidth / 2 + 4
         val rect = RectF(padding, padding, size - padding, size - padding)
@@ -220,6 +295,8 @@ object WidgetRenderer {
         // Foreground arc drawn from 12-o'clock position (-90 deg)
         paint.color = remainingColor
         paint.strokeCap = Paint.Cap.ROUND
+        glowPaint.strokeCap = Paint.Cap.ROUND
+        canvas.drawArc(rect, -90f, progress * 360f, false, glowPaint)
         canvas.drawArc(rect, -90f, progress * 360f, false, paint)
 
         return bitmap

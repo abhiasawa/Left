@@ -20,6 +20,7 @@ import com.timeleft.domain.models.TimeUnit
 import com.timeleft.navigation.AppNavigation
 import com.timeleft.ui.settings.SettingsSheet
 import com.timeleft.ui.screens.getTimeData
+import com.timeleft.ui.theme.ThemePack
 import com.timeleft.ui.theme.TimeLeftTheme
 import com.timeleft.util.NotificationHelper
 import com.timeleft.util.ShareHelper
@@ -69,8 +70,12 @@ class MainActivity : ComponentActivity() {
                 mutableStateOf(TimeUnit.fromString(preferences.selectedTimeUnit))
             }
             var showSettings by remember { mutableStateOf(false) }
+            val themePack = ThemePack.fromString(preferences.themePack)
 
-            TimeLeftTheme(darkTheme = preferences.darkMode) {
+            TimeLeftTheme(
+                darkTheme = preferences.darkMode,
+                themePack = themePack
+            ) {
                 AppNavigation(
                     preferences = preferences,
                     selectedUnit = selectedUnit,
@@ -116,6 +121,9 @@ class MainActivity : ComponentActivity() {
                         },
                         onRemainingColorChanged = { color ->
                             scope.launch { prefsRepository.updateRemainingColor(color) }
+                        },
+                        onThemePackChanged = { pack ->
+                            scope.launch { prefsRepository.updateThemePack(pack.storageKey) }
                         },
                         onDarkModeChanged = { enabled ->
                             scope.launch { prefsRepository.updateDarkMode(enabled) }

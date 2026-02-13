@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,11 +34,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.timeleft.data.preferences.UserPreferencesRepository
+import com.timeleft.ui.theme.ThemePack
 import com.timeleft.ui.theme.TimeLeftTheme
+import com.timeleft.ui.theme.appPalette
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 /**
  * Configuration screen shown when the user adds a widget to their home screen.
@@ -65,8 +72,12 @@ class WidgetConfigActivity : ComponentActivity() {
             return
         }
 
+        val preferences = runBlocking { UserPreferencesRepository(this@WidgetConfigActivity).preferences.first() }
+        val themePack = ThemePack.fromString(preferences.themePack)
+
         setContent {
-            TimeLeftTheme(darkTheme = true) {
+            TimeLeftTheme(darkTheme = preferences.darkMode, themePack = themePack) {
+                val palette = appPalette(themePack, preferences.darkMode)
                 var selectedType by remember { mutableStateOf("year") }
 
                 val widgetTypes = listOf(
@@ -81,7 +92,15 @@ class WidgetConfigActivity : ComponentActivity() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    palette.ambientStart.copy(alpha = 0.9f),
+                                    palette.ambientMiddle.copy(alpha = 0.85f),
+                                    palette.background
+                                )
+                            )
+                        )
                         .statusBarsPadding()
                         .padding(24.dp)
                 ) {
@@ -110,8 +129,17 @@ class WidgetConfigActivity : ComponentActivity() {
                                 .padding(vertical = 4.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(
-                                    if (isSelected) MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
-                                    else Color.Transparent
+                                    if (isSelected) MaterialTheme.colorScheme.onBackground.copy(alpha = 0.16f)
+                                    else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f)
+                                )
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                                    },
+                                    shape = RoundedCornerShape(12.dp)
                                 )
                                 .clickable { selectedType = type }
                                 .padding(16.dp)
