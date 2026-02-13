@@ -1,27 +1,49 @@
 package com.timeleft.ui.settings
 
+import android.app.DatePickerDialog
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,16 +55,22 @@ import com.timeleft.ui.components.SymbolPicker
 import com.timeleft.ui.theme.AccentBlue
 import com.timeleft.ui.theme.PresetColors
 import com.timeleft.ui.theme.PresetElapsedColors
+import com.timeleft.util.TimeCalculations
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 /**
  * Modal bottom sheet for app customization.
  *
- * Sections (top → bottom):
- * - **Preview** — live 40-dot grid reflecting current symbol + colors.
- * - **Symbol** — shape picker (dot, star, heart, etc.).
- * - **Colors** — remaining + elapsed color swatches.
- * - **Appearance** — dark-mode toggle.
- * - **Notifications** — master toggle plus daily / milestone sub-toggles.
+ * Sections (top -> bottom):
+ * - **Preview** -- live 40-dot grid reflecting current symbol + colors.
+ * - **Symbol** -- shape picker (dot, star, heart, etc.).
+ * - **Colors** -- remaining + elapsed color swatches.
+ * - **Profile (Personal)** -- name, birth date, gender, country.
+ * - **Life Expectancy** -- lifespan slider (40-120 years).
+ * - **Active Hours** -- start/end hour sliders for the Day view.
+ * - **Appearance** -- dark-mode toggle.
+ * - **Notifications** -- master toggle plus daily / milestone sub-toggles.
  *
  * Opened via long-press on the main [LeftScreen].
  */
@@ -57,13 +85,25 @@ fun SettingsSheet(
     onDarkModeChanged: (Boolean) -> Unit,
     onNotificationsChanged: (Boolean) -> Unit,
     onDailyNotificationChanged: (Boolean) -> Unit,
-    onMilestoneNotificationChanged: (Boolean) -> Unit
+    onMilestoneNotificationChanged: (Boolean) -> Unit,
+    onBirthDateChanged: (LocalDate) -> Unit,
+    onGenderChanged: (String) -> Unit,
+    onCountryChanged: (String) -> Unit,
+    onLifespanChanged: (Int) -> Unit,
+    onNameChanged: (String) -> Unit,
+    onActiveHoursChanged: (Int, Int) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
 
     val currentSymbol = SymbolType.fromString(preferences.symbolType)
     val elapsedColor = parseColor(preferences.elapsedColor)
     val remainingColor = parseColor(preferences.remainingColor)
+
+    val birthDate = preferences.birthDate
+    val gender = preferences.gender
+    val country = preferences.country
+    val lifespan = preferences.expectedLifespan
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -74,27 +114,28 @@ fun SettingsSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp)
         ) {
             Text(
                 text = "Settings",
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Medium
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Live preview
+            // ── Preview ────────────────────────────────────────────────────
             SectionLabel("PREVIEW")
             Spacer(modifier = Modifier.height(8.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(12.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f))
+                    .padding(8.dp)
             ) {
                 DotGrid(
                     totalUnits = 40,
@@ -102,11 +143,11 @@ fun SettingsSheet(
                     symbolType = currentSymbol,
                     elapsedColor = elapsedColor,
                     remainingColor = remainingColor,
-                    dotSize = 8.dp,
-                    spacing = 3.dp,
+                    dotSize = 7.dp,
+                    spacing = 2.dp,
                     showCurrentIndicator = true,
                     animateOnChange = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
@@ -114,7 +155,7 @@ fun SettingsSheet(
             SettingsDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Symbol picker
+            // ── Symbol picker ──────────────────────────────────────────────
             SectionLabel("SYMBOL")
             Spacer(modifier = Modifier.height(8.dp))
             SymbolPicker(
@@ -126,7 +167,7 @@ fun SettingsSheet(
             SettingsDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Colors
+            // ── Colors ─────────────────────────────────────────────────────
             SectionLabel("COLORS")
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -154,7 +195,274 @@ fun SettingsSheet(
             SettingsDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Appearance
+            // ── Profile (Personal) ─────────────────────────────────────────
+            SectionLabel("PERSONAL")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            GlassSection {
+                // Name field with local state for responsive typing
+                var localName by remember(preferences.userName) {
+                    mutableStateOf(preferences.userName)
+                }
+
+                OutlinedTextField(
+                    value = localName,
+                    onValueChange = { localName = it; onNameChanged(it) },
+                    label = { Text("Name (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        focusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f),
+                        focusedLabelColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
+                        cursorColor = MaterialTheme.colorScheme.onBackground
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Birth date
+                val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
+                val birthDateText = birthDate?.format(dateFormatter) ?: "Select date"
+
+                Text(
+                    text = "DATE OF BIRTH",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f),
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                GlassField(
+                    text = birthDateText,
+                    placeholder = birthDate == null,
+                    onClick = {
+                        val initial = birthDate ?: LocalDate.of(1990, 1, 1)
+                        DatePickerDialog(
+                            context,
+                            { _, year, month, day ->
+                                onBirthDateChanged(LocalDate.of(year, month + 1, day))
+                            },
+                            initial.year,
+                            initial.monthValue - 1,
+                            initial.dayOfMonth
+                        ).apply {
+                            datePicker.maxDate = System.currentTimeMillis()
+                        }.show()
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Gender
+                var genderExpanded by remember { mutableStateOf(false) }
+                val genderOptions = listOf("Male", "Female", "Other")
+
+                Text(
+                    text = "GENDER",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f),
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Box {
+                    GlassField(
+                        text = gender.ifEmpty { "Select gender" },
+                        placeholder = gender.isEmpty(),
+                        onClick = { genderExpanded = true }
+                    )
+                    DropdownMenu(
+                        expanded = genderExpanded,
+                        onDismissRequest = { genderExpanded = false },
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                    ) {
+                        genderOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    onGenderChanged(option)
+                                    genderExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Country
+                var countryExpanded by remember { mutableStateOf(false) }
+
+                Text(
+                    text = "COUNTRY",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f),
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Box {
+                    GlassField(
+                        text = country.ifEmpty { "Select country" },
+                        placeholder = country.isEmpty(),
+                        onClick = { countryExpanded = true }
+                    )
+                    DropdownMenu(
+                        expanded = countryExpanded,
+                        onDismissRequest = { countryExpanded = false },
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                    ) {
+                        TimeCalculations.availableCountries.forEach { c ->
+                            DropdownMenuItem(
+                                text = { Text(c) },
+                                onClick = {
+                                    onCountryChanged(c)
+                                    countryExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            SettingsDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ── Life Expectancy ────────────────────────────────────────────
+            SectionLabel("LIFE EXPECTANCY")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            GlassSection {
+                if (gender.isNotEmpty() && country.isNotEmpty()) {
+                    val estimated = TimeCalculations.estimateLifeExpectancy(gender, country)
+                    Text(
+                        text = "Estimated: $estimated years ($country, $gender)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
+                        fontSize = 11.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                var sliderValue by remember(lifespan) {
+                    mutableFloatStateOf(lifespan.toFloat())
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Expected lifespan",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = "${sliderValue.toInt()} years",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Slider(
+                    value = sliderValue,
+                    onValueChange = { sliderValue = it },
+                    onValueChangeFinished = { onLifespanChanged(sliderValue.toInt()) },
+                    valueRange = 40f..120f,
+                    steps = 79,
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.onBackground,
+                        activeTrackColor = MaterialTheme.colorScheme.onBackground,
+                        inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            SettingsDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ── Active Hours ───────────────────────────────────────────────
+            SectionLabel("ACTIVE HOURS")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            GlassSection {
+                Text(
+                    text = "Used for the Day view to show only waking hours",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f),
+                    fontSize = 11.sp
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                var startHour by remember(preferences.activeHoursStart) {
+                    mutableFloatStateOf(preferences.activeHoursStart.toFloat())
+                }
+                var endHour by remember(preferences.activeHoursEnd) {
+                    mutableFloatStateOf(preferences.activeHoursEnd.toFloat())
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Start: ${formatHour(startHour.toInt())}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = "End: ${formatHour(endHour.toInt())}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    )
+                }
+
+                Slider(
+                    value = startHour,
+                    onValueChange = { startHour = it },
+                    onValueChangeFinished = {
+                        onActiveHoursChanged(startHour.toInt(), endHour.toInt())
+                    },
+                    valueRange = 0f..23f,
+                    steps = 22,
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.onBackground,
+                        activeTrackColor = MaterialTheme.colorScheme.onBackground,
+                        inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Slider(
+                    value = endHour,
+                    onValueChange = { endHour = it },
+                    onValueChangeFinished = {
+                        onActiveHoursChanged(startHour.toInt(), endHour.toInt())
+                    },
+                    valueRange = 1f..24f,
+                    steps = 22,
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.onBackground,
+                        activeTrackColor = MaterialTheme.colorScheme.onBackground,
+                        inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            SettingsDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ── Appearance ─────────────────────────────────────────────────
             SectionLabel("APPEARANCE")
             Spacer(modifier = Modifier.height(8.dp))
             SettingsToggle(
@@ -167,7 +475,7 @@ fun SettingsSheet(
             SettingsDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Notifications
+            // ── Notifications ──────────────────────────────────────────────
             SectionLabel("NOTIFICATIONS")
             Spacer(modifier = Modifier.height(8.dp))
             SettingsToggle(
@@ -197,20 +505,75 @@ fun SettingsSheet(
     }
 }
 
+/** Glass container for form sections. */
+@Composable
+private fun GlassSection(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f))
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.04f),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(16.dp)
+    ) {
+        Column { content() }
+    }
+}
+
+/** Glass-styled field (dropdown/date picker trigger). */
+@Composable
+private fun GlassField(
+    text: String,
+    placeholder: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.04f))
+            .clickable(onClick = onClick)
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = text,
+                color = if (!placeholder)
+                    MaterialTheme.colorScheme.onBackground
+                else
+                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
+            )
+            Icon(
+                Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f)
+            )
+        }
+    }
+}
+
 @Composable
 private fun SectionLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
         letterSpacing = 1.5.sp,
-        fontWeight = FontWeight.SemiBold
+        fontWeight = FontWeight.Medium
     )
 }
 
 @Composable
 private fun SettingsDivider() {
-    Divider(
+    HorizontalDivider(
         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f),
         thickness = 1.dp
     )
@@ -254,6 +617,17 @@ private fun SettingsToggle(
                 uncheckedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
             )
         )
+    }
+}
+
+/** Converts 24-hour int to "3 PM" format for the active-hours sliders. */
+private fun formatHour(hour: Int): String {
+    return when {
+        hour == 0 -> "12 AM"
+        hour < 12 -> "$hour AM"
+        hour == 12 -> "12 PM"
+        hour == 24 -> "12 AM"
+        else -> "${hour - 12} PM"
     }
 }
 

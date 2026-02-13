@@ -132,6 +132,11 @@ object TimeCalculations {
         return ChronoUnit.YEARS.between(birthDate, LocalDate.now()).toInt()
     }
 
+    /** Full weeks the user has been alive. */
+    fun lifeWeeksElapsed(birthDate: LocalDate): Int {
+        return ChronoUnit.WEEKS.between(birthDate, LocalDate.now()).toInt()
+    }
+
     fun lifeYearsRemaining(birthDate: LocalDate, expectedLifespan: Int): Int {
         val lived = lifeYearsElapsed(birthDate)
         return (expectedLifespan - lived).coerceAtLeast(0)

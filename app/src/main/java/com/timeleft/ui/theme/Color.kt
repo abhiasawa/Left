@@ -4,9 +4,9 @@ import androidx.compose.ui.graphics.Color
 
 // ── Dark theme palette (default) ─────────────────────────────────────
 val Black = Color(0xFF000000)
-val DarkSurface = Color(0xFF121212)
-val DarkSurfaceVariant = Color(0xFF1E1E1E)
-val DotElapsedDark = Color(0xFF3A3A3A)
+val DarkSurface = Color(0xFF0A0A0A)
+val DarkSurfaceVariant = Color(0xFF111111)
+val DotElapsedDark = Color(0xFF333333)
 val DotRemainingDark = Color(0xFFFFFFFF)
 val AccentRed = Color(0xFFFF3B30)
 val AccentBlue = Color(0xFF007AFF)
@@ -51,7 +51,7 @@ val PresetColors = listOf(
 
 /** Colors available for the "elapsed" dots (intentionally darker/muted). */
 val PresetElapsedColors = listOf(
-    Color(0xFF3A3A3A), // Dark gray (default)
+    Color(0xFF333333), // Dark gray (default)
     Color(0xFF4A1A1A), // Dark red
     Color(0xFF4A3A1A), // Dark orange
     Color(0xFF1A3A1A), // Dark green

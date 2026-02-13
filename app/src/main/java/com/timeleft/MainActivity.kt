@@ -11,7 +11,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.toArgb
 import com.timeleft.data.db.AppDatabase
 import com.timeleft.data.preferences.UserPreferencesData
 import com.timeleft.data.preferences.UserPreferencesRepository
@@ -51,11 +50,19 @@ class MainActivity : ComponentActivity() {
 
         NotificationHelper.createNotificationChannels(this)
 
+        // If launched from a widget, switch to the requested time unit
+        val widgetUnit = intent?.getStringExtra("time_unit")
+        if (widgetUnit != null) {
+            val unit = TimeUnit.fromString(widgetUnit)
+            kotlinx.coroutines.runBlocking {
+                prefsRepository.updateSelectedTimeUnit(unit.name)
+            }
+        }
+
         setContent {
             val preferences by prefsRepository.preferences.collectAsState(
                 initial = UserPreferencesData()
             )
-            val customDates by timeRepository.customDates.collectAsState(initial = emptyList())
             val scope = rememberCoroutineScope()
 
             var selectedUnit by remember(preferences.selectedTimeUnit) {
@@ -66,7 +73,6 @@ class MainActivity : ComponentActivity() {
             TimeLeftTheme(darkTheme = preferences.darkMode) {
                 AppNavigation(
                     preferences = preferences,
-                    customDates = customDates,
                     selectedUnit = selectedUnit,
                     onUnitSelected = { unit ->
                         selectedUnit = unit
@@ -94,56 +100,7 @@ class MainActivity : ComponentActivity() {
                             currentColor = currentColor
                         )
                     },
-                    onLongPress = { showSettings = true },
-                    onAddDate = { date ->
-                        scope.launch { timeRepository.addCustomDate(date) }
-                    },
-                    onDeleteDate = { id ->
-                        scope.launch { timeRepository.deleteCustomDate(id) }
-                    },
-                    // When demographics change, auto-recalculate life expectancy
-                    onBirthDateChanged = { date ->
-                        scope.launch {
-                            prefsRepository.updateBirthDate(date)
-                            if (preferences.gender.isNotEmpty() && preferences.country.isNotEmpty()) {
-                                val estimated = com.timeleft.util.TimeCalculations.estimateLifeExpectancy(
-                                    preferences.gender, preferences.country
-                                )
-                                prefsRepository.updateExpectedLifespan(estimated)
-                            }
-                        }
-                    },
-                    onGenderChanged = { gender ->
-                        scope.launch {
-                            prefsRepository.updateGender(gender)
-                            if (gender.isNotEmpty() && preferences.country.isNotEmpty()) {
-                                val estimated = com.timeleft.util.TimeCalculations.estimateLifeExpectancy(
-                                    gender, preferences.country
-                                )
-                                prefsRepository.updateExpectedLifespan(estimated)
-                            }
-                        }
-                    },
-                    onCountryChanged = { country ->
-                        scope.launch {
-                            prefsRepository.updateCountry(country)
-                            if (preferences.gender.isNotEmpty() && country.isNotEmpty()) {
-                                val estimated = com.timeleft.util.TimeCalculations.estimateLifeExpectancy(
-                                    preferences.gender, country
-                                )
-                                prefsRepository.updateExpectedLifespan(estimated)
-                            }
-                        }
-                    },
-                    onLifespanChanged = { years ->
-                        scope.launch { prefsRepository.updateExpectedLifespan(years) }
-                    },
-                    onNameChanged = { name ->
-                        scope.launch { prefsRepository.updateUserName(name) }
-                    },
-                    onActiveHoursChanged = { start, end ->
-                        scope.launch { prefsRepository.updateActiveHours(start, end) }
-                    }
+                    onSettingsClick = { showSettings = true }
                 )
 
                 // Settings bottom sheet
@@ -185,6 +142,49 @@ class MainActivity : ComponentActivity() {
                         },
                         onMilestoneNotificationChanged = { enabled ->
                             scope.launch { prefsRepository.updateMilestoneNotification(enabled) }
+                        },
+                        // Profile callbacks
+                        onBirthDateChanged = { date ->
+                            scope.launch {
+                                prefsRepository.updateBirthDate(date)
+                                if (preferences.gender.isNotEmpty() && preferences.country.isNotEmpty()) {
+                                    val estimated = com.timeleft.util.TimeCalculations.estimateLifeExpectancy(
+                                        preferences.gender, preferences.country
+                                    )
+                                    prefsRepository.updateExpectedLifespan(estimated)
+                                }
+                            }
+                        },
+                        onGenderChanged = { gender ->
+                            scope.launch {
+                                prefsRepository.updateGender(gender)
+                                if (gender.isNotEmpty() && preferences.country.isNotEmpty()) {
+                                    val estimated = com.timeleft.util.TimeCalculations.estimateLifeExpectancy(
+                                        gender, preferences.country
+                                    )
+                                    prefsRepository.updateExpectedLifespan(estimated)
+                                }
+                            }
+                        },
+                        onCountryChanged = { country ->
+                            scope.launch {
+                                prefsRepository.updateCountry(country)
+                                if (preferences.gender.isNotEmpty() && country.isNotEmpty()) {
+                                    val estimated = com.timeleft.util.TimeCalculations.estimateLifeExpectancy(
+                                        preferences.gender, country
+                                    )
+                                    prefsRepository.updateExpectedLifespan(estimated)
+                                }
+                            }
+                        },
+                        onLifespanChanged = { years ->
+                            scope.launch { prefsRepository.updateExpectedLifespan(years) }
+                        },
+                        onNameChanged = { name ->
+                            scope.launch { prefsRepository.updateUserName(name) }
+                        },
+                        onActiveHoursChanged = { start, end ->
+                            scope.launch { prefsRepository.updateActiveHours(start, end) }
                         }
                     )
                 }

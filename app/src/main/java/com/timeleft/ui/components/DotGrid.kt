@@ -29,23 +29,19 @@ import com.timeleft.domain.models.SymbolType
 import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Core visualization: renders a grid of symbols representing elapsed vs. remaining time.
  *
- * Features:
- * - Supports 7 symbol shapes (dot, square, diamond, star, heart, hexagon, number).
- * - Staggered spring entrance animation when data changes.
- * - Pulsing glow highlight on the "current" (next-to-fill) unit.
- * - Auto-computes column count from available width when [columns] is 0.
+ * Two modes:
+ * - **Fixed mode** (default): uses explicit [dotSize] and [spacing] values.
+ * - **Adaptive fill mode** ([fillAvailableSpace] = true): auto-calculates dot size
+ *   and column count to maximally fill the available canvas area. The grid becomes
+ *   the material that fills the screen — tight, dense, like an LED board.
  *
- * @param totalUnits            Total symbols in the grid.
- * @param elapsedUnits          How many symbols are "filled" (elapsed).
- * @param symbolType            Shape to draw for each unit.
- * @param elapsedColor          Color for filled symbols.
- * @param remainingColor        Color for unfilled symbols.
- * @param currentIndicatorColor Highlight color for the next symbol to fill.
- * @param columns               Fixed column count, or 0 to auto-fit.
+ * @param fillAvailableSpace When true, ignores [dotSize]/[spacing] and auto-computes
+ *        optimal dimensions to fill the canvas width and height.
  */
 @Composable
 fun DotGrid(
@@ -60,6 +56,7 @@ fun DotGrid(
     spacing: Dp = 4.dp,
     showCurrentIndicator: Boolean = true,
     animateOnChange: Boolean = true,
+    fillAvailableSpace: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -99,104 +96,198 @@ fun DotGrid(
         modifier = modifier.fillMaxWidth()
     ) {
         val canvasWidth = size.width
-        val effectiveColumns = if (columns > 0) columns else {
-            val cellSize = dotSizePx + spacingPx
-            ((canvasWidth + spacingPx) / cellSize).toInt().coerceAtLeast(1)
-        }
+        val canvasHeight = size.height
 
-        val cellWidth = dotSizePx + spacingPx
-        val totalWidth = effectiveColumns * cellWidth - spacingPx
-        val offsetX = (canvasWidth - totalWidth) / 2f
+        if (totalUnits <= 0 || canvasWidth <= 0f || canvasHeight <= 0f) return@Canvas
 
-        for (i in 0 until totalUnits) {
-            val col = i % effectiveColumns
-            val row = i / effectiveColumns
+        if (fillAvailableSpace) {
+            // ── Adaptive fill mode ──
+            // Use explicit column count when provided, otherwise auto-compute
+            val effectiveColumns = if (columns > 0) columns
+                else findOptimalColumns(canvasWidth, canvasHeight, totalUnits)
+            val rows = ceil(totalUnits.toFloat() / effectiveColumns).toInt()
 
-            val cx = offsetX + col * cellWidth + dotSizePx / 2f
-            val cy = row * cellWidth + dotSizePx / 2f
+            val cellW = canvasWidth / effectiveColumns
+            val cellH = canvasHeight / rows
+            val cellSize = minOf(cellW, cellH)
 
-            val isElapsed = i < elapsedUnits
-            val isCurrent = showCurrentIndicator && i == elapsedUnits
-            val baseColor = if (isElapsed) elapsedColor else remainingColor
-            val color = if (isCurrent) currentIndicatorColor else baseColor
+            // 76% fill ratio — clean separation between dots
+            val dotRadius = cellSize * 0.38f
 
-            // Stagger: later items start animating slightly after earlier ones
-            val itemProgress = if (animateOnChange) {
-                val delay = i.toFloat() / totalUnits
-                ((animationProgress.value - delay * 0.3f) / 0.7f).coerceIn(0f, 1f)
-            } else 1f
+            // Center the grid in the canvas
+            val gridW = effectiveColumns * cellSize
+            val gridH = rows * cellSize
+            val offsetX = (canvasWidth - gridW) / 2f
+            val offsetY = (canvasHeight - gridH) / 2f
 
-            val scale = itemProgress
-            val radius = (dotSizePx / 2f) * scale
+            for (i in 0 until totalUnits) {
+                val col = i % effectiveColumns
+                val row = i / effectiveColumns
 
-            if (radius > 0f) {
-                // Draw glow behind current indicator
-                if (isCurrent) {
-                    val glowAlpha = 0.15f + glowPulse.value * 0.15f
-                    val glowRadius = radius * (1.6f + glowPulse.value * 0.6f)
-                    drawCircle(
-                        color = currentIndicatorColor.copy(alpha = glowAlpha * 0.5f),
-                        radius = glowRadius,
-                        center = Offset(cx, cy)
-                    )
-                    drawCircle(
-                        color = currentIndicatorColor.copy(alpha = glowAlpha),
-                        radius = radius * (1.3f + glowPulse.value * 0.2f),
-                        center = Offset(cx, cy)
-                    )
-                }
+                val cx = offsetX + col * cellSize + cellSize / 2f
+                val cy = offsetY + row * cellSize + cellSize / 2f
 
-                when (symbolType) {
-                    SymbolType.DOT -> {
+                val isElapsed = i < elapsedUnits
+                val isCurrent = showCurrentIndicator && i == elapsedUnits
+                val baseColor = if (isElapsed) elapsedColor else remainingColor
+                val color = if (isCurrent) currentIndicatorColor else baseColor
+
+                val itemProgress = if (animateOnChange) {
+                    val delay = i.toFloat() / totalUnits
+                    ((animationProgress.value - delay * 0.3f) / 0.7f).coerceIn(0f, 1f)
+                } else 1f
+
+                val scale = itemProgress
+                val radius = dotRadius * scale
+
+                if (radius > 0f) {
+                    if (isCurrent) {
+                        val glowAlpha = 0.15f + glowPulse.value * 0.15f
+                        val glowRadius = radius * (1.6f + glowPulse.value * 0.6f)
                         drawCircle(
-                            color = color,
-                            radius = radius,
+                            color = currentIndicatorColor.copy(alpha = glowAlpha * 0.5f),
+                            radius = glowRadius,
+                            center = Offset(cx, cy)
+                        )
+                        drawCircle(
+                            color = currentIndicatorColor.copy(alpha = glowAlpha),
+                            radius = radius * (1.3f + glowPulse.value * 0.2f),
                             center = Offset(cx, cy)
                         )
                     }
-                    SymbolType.SQUARE -> {
-                        drawRect(
-                            color = color,
-                            topLeft = Offset(cx - radius, cy - radius),
-                            size = Size(radius * 2, radius * 2)
+
+                    drawSymbol(symbolType, color, cx, cy, radius, i)
+                }
+            }
+        } else {
+            // ── Fixed-size mode (original behavior) ──
+            val effectiveColumns = if (columns > 0) columns else {
+                val cellSize = dotSizePx + spacingPx
+                ((canvasWidth + spacingPx) / cellSize).toInt().coerceAtLeast(1)
+            }
+
+            val cellWidth = dotSizePx + spacingPx
+            val totalWidth = effectiveColumns * cellWidth - spacingPx
+            val offsetX = (canvasWidth - totalWidth) / 2f
+
+            for (i in 0 until totalUnits) {
+                val col = i % effectiveColumns
+                val row = i / effectiveColumns
+
+                val cx = offsetX + col * cellWidth + dotSizePx / 2f
+                val cy = row * cellWidth + dotSizePx / 2f
+
+                val isElapsed = i < elapsedUnits
+                val isCurrent = showCurrentIndicator && i == elapsedUnits
+                val baseColor = if (isElapsed) elapsedColor else remainingColor
+                val color = if (isCurrent) currentIndicatorColor else baseColor
+
+                val itemProgress = if (animateOnChange) {
+                    val delay = i.toFloat() / totalUnits
+                    ((animationProgress.value - delay * 0.3f) / 0.7f).coerceIn(0f, 1f)
+                } else 1f
+
+                val scale = itemProgress
+                val radius = (dotSizePx / 2f) * scale
+
+                if (radius > 0f) {
+                    if (isCurrent) {
+                        val glowAlpha = 0.15f + glowPulse.value * 0.15f
+                        val glowRadius = radius * (1.6f + glowPulse.value * 0.6f)
+                        drawCircle(
+                            color = currentIndicatorColor.copy(alpha = glowAlpha * 0.5f),
+                            radius = glowRadius,
+                            center = Offset(cx, cy)
+                        )
+                        drawCircle(
+                            color = currentIndicatorColor.copy(alpha = glowAlpha),
+                            radius = radius * (1.3f + glowPulse.value * 0.2f),
+                            center = Offset(cx, cy)
                         )
                     }
-                    SymbolType.DIAMOND -> {
-                        drawDiamond(color, cx, cy, radius)
-                    }
-                    SymbolType.STAR -> {
-                        drawStar(color, cx, cy, radius)
-                    }
-                    SymbolType.HEART -> {
-                        drawHeart(color, cx, cy, radius)
-                    }
-                    SymbolType.HEXAGON -> {
-                        drawHexagon(color, cx, cy, radius)
-                    }
-                    SymbolType.WORD -> {
-                        val text = (i + 1).toString()
-                        val textSize = radius * 1.2f
-                        drawContext.canvas.nativeCanvas.drawText(
-                            text,
-                            cx,
-                            cy + textSize * 0.35f,
-                            Paint().apply {
-                                this.color = color.toArgb()
-                                this.textSize = textSize
-                                this.textAlign = Paint.Align.CENTER
-                                this.typeface = Typeface.DEFAULT_BOLD
-                                this.isAntiAlias = true
-                            }
-                        )
-                    }
+
+                    drawSymbol(symbolType, color, cx, cy, radius, i)
                 }
             }
         }
     }
 }
 
+/** Finds the column count that maximizes space utilization. Mirrors WidgetRenderer logic. */
+private fun findOptimalColumns(w: Float, h: Float, totalUnits: Int): Int {
+    val optimalCols = sqrt(totalUnits.toDouble() * w / h).toInt()
+        .coerceIn(1, totalUnits)
+
+    var bestCols = optimalCols
+    var bestScore = -1f
+
+    for (delta in -4..4) {
+        val cols = (optimalCols + delta).coerceIn(1, totalUnits)
+        val rows = ceil(totalUnits.toFloat() / cols).toInt()
+
+        val cellW = w / cols
+        val cellH = h / rows
+        val cell = minOf(cellW, cellH)
+
+        val gridW = cols * cell
+        val gridH = rows * cell
+        val utilization = (gridW * gridH) / (w * h)
+
+        val lastRowCount = totalUnits % cols
+        val penalty = if (lastRowCount in 1 until (cols * 0.25f).toInt()) 0.15f else 0f
+
+        val score = utilization - penalty
+        if (score > bestScore) {
+            bestScore = score
+            bestCols = cols
+        }
+    }
+
+    return bestCols
+}
+
+/** Dispatches to the correct shape drawing function. */
+private fun DrawScope.drawSymbol(
+    symbolType: SymbolType,
+    color: Color,
+    cx: Float,
+    cy: Float,
+    radius: Float,
+    index: Int
+) {
+    when (symbolType) {
+        SymbolType.DOT -> {
+            drawCircle(color = color, radius = radius, center = Offset(cx, cy))
+        }
+        SymbolType.SQUARE -> {
+            drawRect(
+                color = color,
+                topLeft = Offset(cx - radius, cy - radius),
+                size = Size(radius * 2, radius * 2)
+            )
+        }
+        SymbolType.DIAMOND -> drawDiamond(color, cx, cy, radius)
+        SymbolType.STAR -> drawStar(color, cx, cy, radius)
+        SymbolType.HEART -> drawHeart(color, cx, cy, radius)
+        SymbolType.HEXAGON -> drawHexagon(color, cx, cy, radius)
+        SymbolType.WORD -> {
+            val text = (index + 1).toString()
+            val textSize = radius * 1.2f
+            drawContext.canvas.nativeCanvas.drawText(
+                text, cx, cy + textSize * 0.35f,
+                Paint().apply {
+                    this.color = color.toArgb()
+                    this.textSize = textSize
+                    this.textAlign = Paint.Align.CENTER
+                    this.typeface = Typeface.DEFAULT_BOLD
+                    this.isAntiAlias = true
+                }
+            )
+        }
+    }
+}
+
 // ── Shape drawing helpers ─────────────────────────────────────────────
-// Each function draws a single symbol centered at (cx, cy) with the given radius.
 
 private fun DrawScope.drawDiamond(color: Color, cx: Float, cy: Float, radius: Float) {
     val path = Path().apply {
@@ -230,19 +321,9 @@ private fun DrawScope.drawHeart(color: Color, cx: Float, cy: Float, radius: Floa
     val path = Path().apply {
         val size = radius * 2
         val topY = cy - radius * 0.5f
-
         moveTo(cx, cy + radius * 0.7f)
-
-        cubicTo(
-            cx - size, cy - radius * 0.2f,
-            cx - size * 0.5f, topY - radius,
-            cx, topY
-        )
-        cubicTo(
-            cx + size * 0.5f, topY - radius,
-            cx + size, cy - radius * 0.2f,
-            cx, cy + radius * 0.7f
-        )
+        cubicTo(cx - size, cy - radius * 0.2f, cx - size * 0.5f, topY - radius, cx, topY)
+        cubicTo(cx + size * 0.5f, topY - radius, cx + size, cy - radius * 0.2f, cx, cy + radius * 0.7f)
         close()
     }
     drawPath(path, color, style = Fill)
@@ -260,7 +341,7 @@ private fun DrawScope.drawHexagon(color: Color, cx: Float, cy: Float, radius: Fl
     drawPath(path, color, style = Fill)
 }
 
-/** Pre-calculates grid height in dp so the parent can reserve space before drawing. */
+/** Pre-calculates grid height in dp so the parent can reserve space (fixed-size mode only). */
 fun calculateGridHeight(
     totalUnits: Int,
     columns: Int,

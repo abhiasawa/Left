@@ -20,7 +20,7 @@ object WidgetRenderer {
      *
      * When [columns] is 0, the optimal column count is calculated automatically
      * to best fill the available bitmap area. When [dotRadiusPx] is 0, the dot
-     * radius is derived from the cell size (80% fill ratio) for a tight, elegant grid.
+     * radius is derived from the cell size (88% fill ratio) for tight, dense packing.
      */
     fun renderDotGrid(
         width: Int,
@@ -53,8 +53,8 @@ object WidgetRenderer {
         val cellH = availH / rows
         val cellSize = minOf(cellW, cellH)
 
-        // Dot radius: 40% of cell = 80% diameter fill ratio for tight packing
-        val effectiveRadius = if (dotRadiusPx > 0f) dotRadiusPx else cellSize * 0.40f
+        // Dot radius: 38% of cell = 76% diameter fill — clean separation between dots
+        val effectiveRadius = if (dotRadiusPx > 0f) dotRadiusPx else cellSize * 0.38f
 
         // Center the grid within the bitmap
         val gridW = effectiveCols * cellSize
@@ -126,7 +126,8 @@ object WidgetRenderer {
 
     /**
      * Renders a barcode-style visualization where each vertical bar represents a time unit.
-     * Elapsed bars are drawn at half height to create a visual distinction from remaining bars.
+     * Elapsed bars are drawn at half height to visually recede. A red "now" marker line
+     * is drawn at the current position, transforming the static barcode into a living clock.
      */
     fun renderBarcode(
         width: Int,
@@ -145,6 +146,8 @@ object WidgetRenderer {
         if (totalUnits <= 0) return bitmap
 
         val barWidth = width.toFloat() / totalUnits
+        // Bars fill 85% of their slot, leaving 15% gap for individual bar definition
+        val barDrawWidth = barWidth * 0.85f
         val paint = Paint().apply {
             isAntiAlias = true
             style = Paint.Style.FILL
@@ -152,7 +155,6 @@ object WidgetRenderer {
 
         for (i in 0 until totalUnits) {
             paint.color = when {
-                i == elapsedUnits -> currentColor
                 i < elapsedUnits -> elapsedColor
                 else -> remainingColor
             }
@@ -161,7 +163,26 @@ object WidgetRenderer {
             // Elapsed bars are half-height so they visually recede
             val barH = if (i < elapsedUnits) height * 0.5f else height.toFloat()
             val top = height - barH
-            canvas.drawRect(left, top, left + barWidth - 1f, height.toFloat(), paint)
+            canvas.drawRect(left, top, left + barDrawWidth, height.toFloat(), paint)
+        }
+
+        // Red "now" marker line at the current position — the pulse of the barcode
+        if (elapsedUnits in 0 until totalUnits) {
+            val markerX = elapsedUnits * barWidth + barWidth / 2f
+            val markerWidth = (width * 0.003f).coerceAtLeast(2f)
+
+            // Vertical marker line
+            paint.color = currentColor
+            paint.style = Paint.Style.FILL
+            canvas.drawRect(
+                markerX - markerWidth / 2f, 0f,
+                markerX + markerWidth / 2f, height.toFloat(),
+                paint
+            )
+
+            // Small position badge circle at the top
+            val badgeRadius = markerWidth * 3f
+            canvas.drawCircle(markerX, badgeRadius + 2f, badgeRadius, paint)
         }
 
         return bitmap

@@ -44,3 +44,5 @@ google-services.json
 # OS files
 .DS_Store
 Thumbs.db
+gradle-8.12-bin.zip
+gradle-8.12/

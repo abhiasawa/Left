@@ -9,12 +9,12 @@ package com.timeleft.domain.models
  * @property displayName User-facing label shown in the [TimeSelector] pill bar.
  */
 enum class TimeUnit(val displayName: String) {
+    LIFE("Life"),
     YEAR("Year"),
     MONTH("Month"),
     WEEK("Week"),
     DAY("Day"),
-    HOUR("Hour"),
-    LIFE("Life");
+    HOUR("Hour");
 
     companion object {
         /** Parses a persisted string back to a [TimeUnit], defaulting to [YEAR]. */
