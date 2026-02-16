@@ -23,21 +23,14 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.timeleft.MainActivity
 import com.timeleft.data.db.AppDatabase
-import com.timeleft.data.preferences.UserPreferencesRepository
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-/**
- * Time Atlas: Countdown panel as a singularity ring with event beacon.
- */
 class CountdownWidget : AtlasWidgetBase() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val preferences = UserPreferencesRepository(context).preferences.first()
-        val style = widgetVisualStyle(preferences)
-        val card = style.cardColors(hueShift = 96f, saturationMul = 1.1f, valueMul = 1.05f, glowAlphaBoost = 1.3f)
+        val style = darkDotWidgetStyle()
 
         val db = AppDatabase.getDatabase(context)
         val dates = db.customDateDao().getAllCustomDates().firstOrNull() ?: emptyList()
@@ -53,32 +46,83 @@ class CountdownWidget : AtlasWidgetBase() {
         val total = entity?.totalDays ?: 1
         val elapsed = entity?.elapsedDays ?: 0
         val progress = (elapsed.toFloat() / total.coerceAtLeast(1)).coerceIn(0f, 1f)
-
-        val eventColor = try {
-            android.graphics.Color.parseColor(entity?.colorHex ?: "#FFFFFF")
-        } catch (_: Exception) {
-            style.currentColor
-        }
+        val orbitTotal = 24
+        val orbitElapsed = (progress * orbitTotal).toInt().coerceIn(0, orbitTotal)
 
         val backgrounds = BitmapVariants(
-            square = WidgetRenderer.renderAtlasCard(1080, 1080, card.start, card.end, eventColor, card.border),
-            wide = WidgetRenderer.renderAtlasCard(1500, 900, card.start, card.end, eventColor, card.border),
-            tall = WidgetRenderer.renderAtlasCard(900, 1500, card.start, card.end, eventColor, card.border)
+            square = WidgetRenderer.renderAtlasCard(
+                width = 1080,
+                height = 1080,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            ),
+            wide = WidgetRenderer.renderAtlasCard(
+                width = 1500,
+                height = 900,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            ),
+            tall = WidgetRenderer.renderAtlasCard(
+                width = 900,
+                height = 1500,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            )
         )
-        val rings = BitmapVariants(
-            square = WidgetRenderer.renderAtlasRingField(560, progress, style.elapsedColor, eventColor, style.currentColor, 0x00000000, strokeWidth = 22f),
-            wide = WidgetRenderer.renderAtlasRingField(460, progress, style.elapsedColor, eventColor, style.currentColor, 0x00000000, strokeWidth = 18f),
-            tall = WidgetRenderer.renderAtlasRingField(620, progress, style.elapsedColor, eventColor, style.currentColor, 0x00000000, strokeWidth = 24f)
+
+        val fields = BitmapVariants(
+            square = WidgetRenderer.renderAtlasOrbitField(
+                width = 620,
+                height = 620,
+                totalUnits = orbitTotal,
+                elapsedUnits = orbitElapsed,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                emphasizeEvery = 6,
+                drawShadow = false
+            ),
+            wide = WidgetRenderer.renderAtlasOrbitField(
+                width = 460,
+                height = 460,
+                totalUnits = orbitTotal,
+                elapsedUnits = orbitElapsed,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                emphasizeEvery = 6,
+                drawShadow = false
+            ),
+            tall = WidgetRenderer.renderAtlasOrbitField(
+                width = 680,
+                height = 680,
+                totalUnits = orbitTotal,
+                elapsedUnits = orbitElapsed,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                emphasizeEvery = 6,
+                drawShadow = false
+            )
         )
 
         provideContent {
-            CountdownWidgetContent(
+            CountdownDotWidgetContent(
                 context = context,
                 name = name,
                 remaining = remaining,
                 hasCountdown = entity != null,
                 backgroundVariants = backgrounds,
-                ringVariants = rings,
+                orbitVariants = fields,
                 style = style
             )
         }
@@ -86,13 +130,13 @@ class CountdownWidget : AtlasWidgetBase() {
 }
 
 @Composable
-private fun CountdownWidgetContent(
+private fun CountdownDotWidgetContent(
     context: Context,
     name: String,
     remaining: Int,
     hasCountdown: Boolean,
     backgroundVariants: BitmapVariants,
-    ringVariants: BitmapVariants,
+    orbitVariants: BitmapVariants,
     style: WidgetVisualStyle
 ) {
     val size = LocalSize.current
@@ -110,7 +154,7 @@ private fun CountdownWidgetContent(
     ) {
         Column(modifier = androidx.glance.GlanceModifier.fillMaxSize()) {
             WidgetHeader(
-                title = "Countdown Atlas",
+                title = "Countdown",
                 badge = if (hasCountdown) "LIVE" else "SETUP",
                 style = style,
                 compact = compact
@@ -133,8 +177,8 @@ private fun CountdownWidgetContent(
                     contentAlignment = Alignment.Center
                 ) {
                     androidx.glance.Image(
-                        provider = androidx.glance.ImageProvider(ringVariants.forWidgetSize(size)),
-                        contentDescription = "Countdown atlas ring",
+                        provider = androidx.glance.ImageProvider(orbitVariants.forWidgetSize(size)),
+                        contentDescription = "Countdown dots",
                         modifier = androidx.glance.GlanceModifier.fillMaxSize(),
                         contentScale = ContentScale.Fit
                     )
@@ -142,7 +186,7 @@ private fun CountdownWidgetContent(
                 Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 4.dp))
                 WidgetFooter(
                     leading = if (compact) "$remaining left" else "$remaining days left",
-                    trailing = if (compact || short) null else "Event beacon",
+                    trailing = if (compact || short) null else "Event",
                     style = style,
                     compact = compact
                 )

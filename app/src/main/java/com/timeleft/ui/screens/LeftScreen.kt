@@ -67,12 +67,9 @@ import androidx.compose.ui.unit.sp
 import com.timeleft.data.preferences.UserPreferencesData
 import com.timeleft.domain.models.SymbolType
 import com.timeleft.domain.models.TimeUnit
-import com.timeleft.ui.components.DayGrid
 import com.timeleft.ui.components.DotGrid
-import com.timeleft.ui.components.HourClock
 import com.timeleft.ui.components.MonthCalendar
 import com.timeleft.ui.components.TimeSelector
-import com.timeleft.ui.components.WeekView
 import com.timeleft.ui.theme.ThemePack
 import com.timeleft.ui.theme.ambientBrush
 import com.timeleft.ui.theme.appPalette
@@ -97,6 +94,8 @@ fun LeftScreen(
     val symbolType = SymbolType.fromString(preferences.symbolType)
     val themePack = ThemePack.fromString(preferences.themePack)
     val palette = appPalette(themePack, preferences.darkMode)
+    val weekElapsedColor = if (isColorClose(elapsedColor, remainingColor)) palette.textSecondary else elapsedColor
+    val weekRemainingColor = if (isColorClose(remainingColor, currentIndicatorColor)) palette.textPrimary else remainingColor
 
     val hasLifeData = preferences.birthDate != null
     val showLifeOption = hasLifeData
@@ -308,36 +307,48 @@ fun LeftScreen(
                                         .fillMaxSize()
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
-                                TimeUnit.WEEK -> WeekView(
-                                    elapsedDays = elapsed,
+                                TimeUnit.WEEK -> DotGrid(
+                                    totalUnits = total,
+                                    elapsedUnits = elapsed,
+                                    symbolType = symbolType,
+                                    elapsedColor = weekElapsedColor,
+                                    remainingColor = weekRemainingColor,
+                                    currentIndicatorColor = currentIndicatorColor,
+                                    columns = 7,
+                                    fillAvailableSpace = true,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 20.dp, vertical = 10.dp)
+                                )
+                                TimeUnit.DAY -> DotGrid(
+                                    totalUnits = total,
+                                    elapsedUnits = elapsed,
                                     symbolType = symbolType,
                                     elapsedColor = elapsedColor,
                                     remainingColor = remainingColor,
                                     currentIndicatorColor = currentIndicatorColor,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 20.dp, vertical = 8.dp)
-                                )
-                                TimeUnit.DAY -> DayGrid(
-                                    totalHours = total,
-                                    elapsedHours = elapsed,
-                                    startHour = preferences.activeHoursStart,
-                                    elapsedColor = elapsedColor,
-                                    remainingColor = remainingColor,
-                                    currentIndicatorColor = currentIndicatorColor,
+                                    columns = when {
+                                        total >= 20 -> 8
+                                        total >= 14 -> 7
+                                        else -> 6
+                                    },
+                                    fillAvailableSpace = true,
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(horizontal = 10.dp, vertical = 6.dp)
                                 )
-                                TimeUnit.HOUR -> HourClock(
-                                    totalMinutes = total,
-                                    elapsedMinutes = elapsed,
+                                TimeUnit.HOUR -> DotGrid(
+                                    totalUnits = total,
+                                    elapsedUnits = elapsed,
+                                    symbolType = symbolType,
                                     elapsedColor = elapsedColor,
                                     remainingColor = remainingColor,
                                     currentIndicatorColor = currentIndicatorColor,
+                                    columns = 10,
+                                    fillAvailableSpace = true,
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .padding(horizontal = 8.dp)
+                                        .padding(horizontal = 8.dp, vertical = 6.dp)
                                 )
                                 TimeUnit.LIFE -> DotGrid(
                                     totalUnits = total,
@@ -562,4 +573,12 @@ private fun parseColor(hex: String): Color {
     } catch (e: Exception) {
         Color.White
     }
+}
+
+private fun isColorClose(a: Color, b: Color, threshold: Float = 0.18f): Boolean {
+    val dr = a.red - b.red
+    val dg = a.green - b.green
+    val db = a.blue - b.blue
+    val distance = kotlin.math.sqrt(dr * dr + dg * dg + db * db)
+    return distance < threshold
 }

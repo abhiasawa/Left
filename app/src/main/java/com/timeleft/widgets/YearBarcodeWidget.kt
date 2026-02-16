@@ -22,50 +22,91 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.timeleft.MainActivity
-import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
-import kotlinx.coroutines.flow.first
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
-/**
- * Time Atlas: Year barcode panel as a scanline corridor.
- */
 class YearBarcodeWidget : AtlasWidgetBase() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val preferences = UserPreferencesRepository(context).preferences.first()
-        val style = widgetVisualStyle(preferences)
-        val card = style.cardColors(hueShift = 236f, saturationMul = 1.08f, valueMul = 0.98f, glowAlphaBoost = 1.3f)
+        val style = darkDotWidgetStyle()
 
         val totalDays = TimeCalculations.totalDaysInYear()
         val elapsed = TimeCalculations.daysElapsedInYear()
         val remaining = TimeCalculations.daysLeftInYear()
+        val year = TimeCalculations.yearLabel()
         val percent = ((elapsed.toFloat() / totalDays.coerceAtLeast(1)) * 100f).toInt()
 
-        val now = LocalDate.now()
-        val dayOfWeek = now.format(DateTimeFormatter.ofPattern("EEE"))
-        val dayNum = now.dayOfMonth.toString()
-        val month = now.format(DateTimeFormatter.ofPattern("MMM"))
-        val year = now.year.toString()
-
         val backgrounds = BitmapVariants(
-            square = WidgetRenderer.renderAtlasCard(1080, 1080, card.start, card.end, card.glow, card.border),
-            wide = WidgetRenderer.renderAtlasCard(1500, 900, card.start, card.end, card.glow, card.border),
-            tall = WidgetRenderer.renderAtlasCard(900, 1500, card.start, card.end, card.glow, card.border)
+            square = WidgetRenderer.renderAtlasCard(
+                width = 1080,
+                height = 1080,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            ),
+            wide = WidgetRenderer.renderAtlasCard(
+                width = 1500,
+                height = 900,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            ),
+            tall = WidgetRenderer.renderAtlasCard(
+                width = 900,
+                height = 1500,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            )
         )
+
         val fields = BitmapVariants(
-            square = WidgetRenderer.renderAtlasBarcodeField(960, 460, totalDays, elapsed, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000),
-            wide = WidgetRenderer.renderAtlasBarcodeField(1300, 360, totalDays, elapsed, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000),
-            tall = WidgetRenderer.renderAtlasBarcodeField(760, 820, totalDays, elapsed, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000)
+            square = WidgetRenderer.renderAtlasDotField(
+                width = 960,
+                height = 460,
+                totalUnits = totalDays,
+                elapsedUnits = elapsed,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                columns = 32,
+                emphasizeBand = false,
+                drawShadow = false
+            ),
+            wide = WidgetRenderer.renderAtlasDotField(
+                width = 1300,
+                height = 360,
+                totalUnits = totalDays,
+                elapsedUnits = elapsed,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                columns = 42,
+                emphasizeBand = false,
+                drawShadow = false
+            ),
+            tall = WidgetRenderer.renderAtlasDotField(
+                width = 760,
+                height = 820,
+                totalUnits = totalDays,
+                elapsedUnits = elapsed,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                columns = 22,
+                emphasizeBand = false,
+                drawShadow = false
+            )
         )
 
         provideContent {
-            BarcodeWidgetContent(
+            YearBarcodeDotWidgetContent(
                 context = context,
-                dayOfWeek = dayOfWeek,
-                dayNum = dayNum,
-                month = month,
                 year = year,
                 remaining = remaining,
                 percent = percent,
@@ -78,11 +119,8 @@ class YearBarcodeWidget : AtlasWidgetBase() {
 }
 
 @Composable
-private fun BarcodeWidgetContent(
+private fun YearBarcodeDotWidgetContent(
     context: Context,
-    dayOfWeek: String,
-    dayNum: String,
-    month: String,
     year: String,
     remaining: Int,
     percent: Int,
@@ -106,7 +144,7 @@ private fun BarcodeWidgetContent(
     ) {
         Column(modifier = androidx.glance.GlanceModifier.fillMaxSize()) {
             WidgetHeader(
-                title = "$dayOfWeek $dayNum $month",
+                title = "Year Atlas",
                 badge = "$percent%",
                 style = style,
                 compact = compact
@@ -115,9 +153,9 @@ private fun BarcodeWidgetContent(
             Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 5.dp))
             androidx.glance.Image(
                 provider = androidx.glance.ImageProvider(fieldVariants.forWidgetSize(size)),
-                contentDescription = "Year atlas barcode",
+                contentDescription = "Year atlas dots",
                 modifier = androidx.glance.GlanceModifier.defaultWeight(),
-                contentScale = ContentScale.FillBounds
+                contentScale = ContentScale.Fit
             )
 
             Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 4.dp))

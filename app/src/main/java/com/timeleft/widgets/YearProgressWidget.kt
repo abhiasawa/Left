@@ -3,49 +3,106 @@ package com.timeleft.widgets
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
+import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
+import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
 import com.timeleft.MainActivity
-import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
-import kotlinx.coroutines.flow.first
 
-/**
- * Time Atlas: Year panel as a dense survey map of days.
- */
 class YearProgressWidget : AtlasWidgetBase() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val preferences = UserPreferencesRepository(context).preferences.first()
-        val style = widgetVisualStyle(preferences)
-        val card = style.cardColors(hueShift = 14f, saturationMul = 1.1f, valueMul = 1.04f, glowAlphaBoost = 1.22f)
+        val style = darkDotWidgetStyle()
 
         val totalDays = TimeCalculations.totalDaysInYear()
         val elapsed = TimeCalculations.daysElapsedInYear()
         val remaining = TimeCalculations.daysLeftInYear()
         val year = TimeCalculations.yearLabel()
-        val percent = ((elapsed.toFloat() / totalDays) * 100f).toInt()
+        val percent = ((elapsed.toFloat() / totalDays.coerceAtLeast(1)) * 100f).toInt()
 
         val backgrounds = BitmapVariants(
-            square = WidgetRenderer.renderAtlasCard(1080, 1080, card.start, card.end, card.glow, card.border),
-            wide = WidgetRenderer.renderAtlasCard(1500, 900, card.start, card.end, card.glow, card.border),
-            tall = WidgetRenderer.renderAtlasCard(900, 1500, card.start, card.end, card.glow, card.border)
+            square = WidgetRenderer.renderAtlasCard(
+                width = 1080,
+                height = 1080,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            ),
+            wide = WidgetRenderer.renderAtlasCard(
+                width = 1500,
+                height = 900,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            ),
+            tall = WidgetRenderer.renderAtlasCard(
+                width = 900,
+                height = 1500,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            )
         )
+
         val fields = BitmapVariants(
-            square = WidgetRenderer.renderAtlasDotField(920, 520, totalDays, elapsed, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000),
-            wide = WidgetRenderer.renderAtlasDotField(1280, 430, totalDays, elapsed, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000),
-            tall = WidgetRenderer.renderAtlasDotField(760, 980, totalDays, elapsed, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000)
+            square = WidgetRenderer.renderAtlasDotField(
+                width = 920,
+                height = 520,
+                totalUnits = totalDays,
+                elapsedUnits = elapsed,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                emphasizeBand = false,
+                drawShadow = false
+            ),
+            wide = WidgetRenderer.renderAtlasDotField(
+                width = 1280,
+                height = 430,
+                totalUnits = totalDays,
+                elapsedUnits = elapsed,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                emphasizeBand = false,
+                drawShadow = false
+            ),
+            tall = WidgetRenderer.renderAtlasDotField(
+                width = 760,
+                height = 980,
+                totalUnits = totalDays,
+                elapsedUnits = elapsed,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                emphasizeBand = false,
+                drawShadow = false
+            )
         )
 
         provideContent {
-            YearWidgetContent(
+            YearDotWidgetContent(
                 context = context,
                 year = year,
                 remaining = remaining,
@@ -59,7 +116,7 @@ class YearProgressWidget : AtlasWidgetBase() {
 }
 
 @Composable
-private fun YearWidgetContent(
+private fun YearDotWidgetContent(
     context: Context,
     year: String,
     remaining: Int,
@@ -103,17 +160,33 @@ private fun YearWidgetContent(
             Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 6.dp))
             androidx.glance.Image(
                 provider = androidx.glance.ImageProvider(fieldVariants.forWidgetSize(size)),
-                contentDescription = "Year atlas field",
+                contentDescription = "Year progress dots",
                 modifier = androidx.glance.GlanceModifier.defaultWeight(),
-                contentScale = androidx.glance.layout.ContentScale.FillBounds
+                contentScale = ContentScale.Fit
             )
             Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 4.dp))
-            WidgetFooter(
-                leading = if (compact) "$remaining left" else year,
-                trailing = if (compact) null else "Chronomap",
-                style = style,
-                compact = compact
-            )
+            Row(modifier = androidx.glance.GlanceModifier.fillMaxWidth()) {
+                Text(
+                    text = if (compact) "$remaining left" else "$remaining days left",
+                    style = TextStyle(
+                        color = ColorProvider(Color(style.textPrimary), Color(style.textPrimary)),
+                        fontSize = if (compact) 10.sp else 11.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    modifier = androidx.glance.GlanceModifier.defaultWeight(),
+                    maxLines = 1
+                )
+                if (!short) {
+                    Text(
+                        text = year,
+                        style = TextStyle(
+                            color = ColorProvider(Color(style.textSecondary), Color(style.textSecondary)),
+                            fontSize = if (compact) 10.sp else 11.sp
+                        ),
+                        maxLines = 1
+                    )
+                }
+            }
         }
     }
 }

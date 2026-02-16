@@ -134,7 +134,8 @@ object WidgetRenderer {
         currentColor: Int,
         backgroundColor: Int,
         columns: Int = 0,
-        emphasizeBand: Boolean = true
+        emphasizeBand: Boolean = true,
+        drawShadow: Boolean = true
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -164,8 +165,11 @@ object WidgetRenderer {
         }
 
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-        val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-
+        val shadowPaint = if (drawShadow) {
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        } else {
+            null
+        }
         for (i in 0 until totalUnits) {
             val col = i % cols
             val row = i / cols
@@ -178,9 +182,11 @@ object WidgetRenderer {
                 else -> remainingColor
             }
 
-            shadowPaint.color = paint.color
-            shadowPaint.alpha = if (i == elapsedUnits) 112 else 56
-            canvas.drawCircle(cx, cy + radius * 0.3f, radius * 1.2f, shadowPaint)
+            if (shadowPaint != null) {
+                shadowPaint.color = paint.color
+                shadowPaint.alpha = if (i == elapsedUnits) 112 else 56
+                canvas.drawCircle(cx, cy + radius * 0.3f, radius * 1.2f, shadowPaint)
+            }
             canvas.drawCircle(cx, cy, radius, paint)
         }
 
@@ -258,7 +264,8 @@ object WidgetRenderer {
         remainingColor: Int,
         currentColor: Int,
         backgroundColor: Int,
-        emphasizeEvery: Int = 6
+        emphasizeEvery: Int = 6,
+        drawShadow: Boolean = true
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -279,8 +286,11 @@ object WidgetRenderer {
         canvas.drawArc(rect, -65f, 310f, false, ringPaint)
 
         val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-        val shadow = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-
+        val shadow = if (drawShadow) {
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        } else {
+            null
+        }
         val minor = maxDim * 0.023f
         val major = minor * 1.5f
 
@@ -296,9 +306,11 @@ object WidgetRenderer {
                 else -> remainingColor
             }
 
-            shadow.color = dotPaint.color
-            shadow.alpha = if (i == elapsedUnits) 118 else 52
-            canvas.drawCircle(x, y + r * 0.3f, r * 1.18f, shadow)
+            if (shadow != null) {
+                shadow.color = dotPaint.color
+                shadow.alpha = if (i == elapsedUnits) 118 else 52
+                canvas.drawCircle(x, y + r * 0.3f, r * 1.18f, shadow)
+            }
             canvas.drawCircle(x, y, r, dotPaint)
         }
 
@@ -441,7 +453,8 @@ object WidgetRenderer {
         currentColor = currentColor,
         backgroundColor = backgroundColor,
         columns = columns,
-        emphasizeBand = true
+        emphasizeBand = true,
+        drawShadow = true
     )
 
     fun renderMonthCalendarDots(
@@ -485,7 +498,8 @@ object WidgetRenderer {
         remainingColor,
         currentColor,
         backgroundColor,
-        emphasizeEvery
+        emphasizeEvery,
+        drawShadow = true
     )
 
     fun renderProgressRing(

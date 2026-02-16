@@ -14,19 +14,12 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
 import com.timeleft.MainActivity
-import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
-import kotlinx.coroutines.flow.first
 
-/**
- * Time Atlas: Day panel as an orbital route map.
- */
 class DayHourWidget : AtlasWidgetBase() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val preferences = UserPreferencesRepository(context).preferences.first()
-        val style = widgetVisualStyle(preferences)
-        val card = style.cardColors(hueShift = 170f, saturationMul = 1.04f, valueMul = 1.02f, glowAlphaBoost = 1.2f)
+        val style = darkDotWidgetStyle()
 
         val totalHours = TimeCalculations.totalHoursInDay()
         val elapsedHours = TimeCalculations.hoursElapsedInDay()
@@ -35,18 +28,76 @@ class DayHourWidget : AtlasWidgetBase() {
         val percent = ((elapsedHours.toFloat() / totalHours.coerceAtLeast(1)) * 100f).toInt()
 
         val backgrounds = BitmapVariants(
-            square = WidgetRenderer.renderAtlasCard(1080, 1080, card.start, card.end, card.glow, card.border),
-            wide = WidgetRenderer.renderAtlasCard(1500, 900, card.start, card.end, card.glow, card.border),
-            tall = WidgetRenderer.renderAtlasCard(900, 1500, card.start, card.end, card.glow, card.border)
+            square = WidgetRenderer.renderAtlasCard(
+                width = 1080,
+                height = 1080,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            ),
+            wide = WidgetRenderer.renderAtlasCard(
+                width = 1500,
+                height = 900,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            ),
+            tall = WidgetRenderer.renderAtlasCard(
+                width = 900,
+                height = 1500,
+                startColor = style.cardStart,
+                endColor = style.cardEnd,
+                glowColor = style.cardGlow,
+                borderColor = style.cardBorder
+            )
         )
+
         val fields = BitmapVariants(
-            square = WidgetRenderer.renderAtlasOrbitField(760, 560, totalHours, elapsedHours, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000, emphasizeEvery = 6),
-            wide = WidgetRenderer.renderAtlasOrbitField(1250, 420, totalHours, elapsedHours, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000, emphasizeEvery = 6),
-            tall = WidgetRenderer.renderAtlasOrbitField(760, 980, totalHours, elapsedHours, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000, emphasizeEvery = 6)
+            square = WidgetRenderer.renderAtlasDotField(
+                width = 760,
+                height = 520,
+                totalUnits = totalHours,
+                elapsedUnits = elapsedHours,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                columns = 8,
+                emphasizeBand = false,
+                drawShadow = false
+            ),
+            wide = WidgetRenderer.renderAtlasDotField(
+                width = 1250,
+                height = 360,
+                totalUnits = totalHours,
+                elapsedUnits = elapsedHours,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                columns = 12,
+                emphasizeBand = false,
+                drawShadow = false
+            ),
+            tall = WidgetRenderer.renderAtlasDotField(
+                width = 760,
+                height = 900,
+                totalUnits = totalHours,
+                elapsedUnits = elapsedHours,
+                elapsedColor = style.elapsedColor,
+                remainingColor = style.remainingColor,
+                currentColor = style.currentColor,
+                backgroundColor = 0x00000000,
+                columns = 6,
+                emphasizeBand = false,
+                drawShadow = false
+            )
         )
 
         provideContent {
-            DayHourWidgetContent(
+            DayHourDotWidgetContent(
                 context = context,
                 dayLabel = dayLabel,
                 remainingHours = remainingHours,
@@ -60,7 +111,7 @@ class DayHourWidget : AtlasWidgetBase() {
 }
 
 @Composable
-private fun DayHourWidgetContent(
+private fun DayHourDotWidgetContent(
     context: Context,
     dayLabel: String,
     remainingHours: Int,
@@ -104,14 +155,14 @@ private fun DayHourWidgetContent(
             Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 4.dp))
             androidx.glance.Image(
                 provider = androidx.glance.ImageProvider(fieldVariants.forWidgetSize(size)),
-                contentDescription = "Day atlas orbit",
+                contentDescription = "Day progress dots",
                 modifier = androidx.glance.GlanceModifier.defaultWeight(),
                 contentScale = ContentScale.Fit
             )
             Spacer(modifier = androidx.glance.GlanceModifier.height(if (compact) 2.dp else 4.dp))
             WidgetFooter(
                 leading = if (compact) "$remainingHours left" else dayLabel,
-                trailing = if (compact) null else "Orbit",
+                trailing = if (compact) null else "Today",
                 style = style,
                 compact = compact
             )
