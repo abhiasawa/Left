@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,6 +23,8 @@ import com.timeleft.ui.settings.SettingsSheet
 import com.timeleft.ui.screens.getTimeData
 import com.timeleft.ui.theme.ThemePack
 import com.timeleft.ui.theme.TimeLeftTheme
+import com.timeleft.ui.theme.appPalette
+import com.timeleft.ui.theme.elapsedDotColor
 import com.timeleft.util.NotificationHelper
 import com.timeleft.util.ShareHelper
 import kotlinx.coroutines.launch
@@ -87,10 +90,11 @@ class MainActivity : ComponentActivity() {
                     },
                     onShareClick = {
                         val timeData = getTimeData(selectedUnit, preferences)
-                        val elapsedColor = parseColorInt(preferences.elapsedColor)
-                        val remainingColor = parseColorInt(preferences.remainingColor)
-                        val bgColor = if (preferences.darkMode) 0xFF000000.toInt() else 0xFFF5F5F5.toInt()
-                        val currentColor = parseColorInt(preferences.currentIndicatorColor)
+                        val palette = appPalette(themePack, preferences.darkMode)
+                        val elapsedColor = elapsedDotColor(themePack, preferences.darkMode).toArgb()
+                        val remainingColor = palette.textPrimary.toArgb()
+                        val bgColor = palette.background.toArgb()
+                        val currentColor = remainingColor
 
                         ShareHelper.shareTimeLeft(
                             context = this@MainActivity,
@@ -197,14 +201,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
-        }
-    }
-
-    private fun parseColorInt(hex: String): Int {
-        return try {
-            android.graphics.Color.parseColor(hex)
-        } catch (e: Exception) {
-            android.graphics.Color.WHITE
         }
     }
 }

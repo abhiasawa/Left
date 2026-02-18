@@ -20,6 +20,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -73,6 +75,7 @@ import com.timeleft.ui.components.TimeSelector
 import com.timeleft.ui.theme.ThemePack
 import com.timeleft.ui.theme.ambientBrush
 import com.timeleft.ui.theme.appPalette
+import com.timeleft.ui.theme.elapsedDotColor
 import com.timeleft.util.TimeCalculations
 import java.time.LocalDate
 
@@ -88,14 +91,14 @@ fun LeftScreen(
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val elapsedColor = parseColor(preferences.elapsedColor)
-    val remainingColor = parseColor(preferences.remainingColor)
-    val currentIndicatorColor = parseColor(preferences.currentIndicatorColor)
     val symbolType = SymbolType.fromString(preferences.symbolType)
     val themePack = ThemePack.fromString(preferences.themePack)
     val palette = appPalette(themePack, preferences.darkMode)
+    val elapsedColor = elapsedDotColor(themePack, preferences.darkMode)
+    val remainingColor = palette.textPrimary
+    val currentIndicatorColor = remainingColor
     val weekElapsedColor = if (isColorClose(elapsedColor, remainingColor)) palette.textSecondary else elapsedColor
-    val weekRemainingColor = if (isColorClose(remainingColor, currentIndicatorColor)) palette.textPrimary else remainingColor
+    val weekRemainingColor = if (isColorClose(remainingColor, elapsedColor)) palette.textPrimary else remainingColor
 
     val hasLifeData = preferences.birthDate != null
     val showLifeOption = hasLifeData
@@ -222,7 +225,19 @@ fun LeftScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(palette.surface.copy(alpha = 0.6f))
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        listOf(
+                                            palette.surface.copy(alpha = 0.48f),
+                                            palette.surfaceVariant.copy(alpha = 0.26f)
+                                        )
+                                    )
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = palette.textPrimary.copy(alpha = 0.16f),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Settings,
@@ -267,7 +282,20 @@ fun LeftScreen(
                                 translationX = swipeParallax
                             }
                             .clip(RoundedCornerShape(30.dp))
-                            .background(palette.surface.copy(alpha = 0.26f))
+                            .background(
+                                brush = Brush.linearGradient(
+                                    listOf(
+                                        palette.surface.copy(alpha = 0.46f),
+                                        palette.surfaceVariant.copy(alpha = 0.3f),
+                                        palette.surface.copy(alpha = 0.24f)
+                                    )
+                                )
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = palette.textPrimary.copy(alpha = 0.16f),
+                                shape = RoundedCornerShape(30.dp)
+                            )
                     ) {
                         FrameChrome(
                             highlight = palette.accent,
@@ -406,7 +434,19 @@ fun LeftScreen(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(palette.surface.copy(alpha = 0.5f))
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        listOf(
+                                            palette.surface.copy(alpha = 0.46f),
+                                            palette.surfaceVariant.copy(alpha = 0.24f)
+                                        )
+                                    )
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = palette.textPrimary.copy(alpha = 0.14f),
+                                    shape = RoundedCornerShape(10.dp)
+                                )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Share,
@@ -435,10 +475,47 @@ private fun FrameChrome(
         val corner = 30.dp.toPx()
 
         drawRoundRect(
-            color = border.copy(alpha = 0.42f),
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = 0.14f),
+                    Color.Transparent
+                ),
+                startY = 0f,
+                endY = size.height * 0.56f
+            ),
+            size = size,
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner, corner)
+        )
+
+        drawRoundRect(
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    highlight.copy(alpha = 0.16f),
+                    Color.Transparent,
+                    highlight.copy(alpha = 0.08f)
+                )
+            ),
+            size = size,
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner, corner)
+        )
+
+        drawRoundRect(
+            color = border.copy(alpha = 0.58f),
             size = size,
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner, corner),
             style = Stroke(width = strokeWidth)
+        )
+
+        val inset = 3.dp.toPx()
+        drawRoundRect(
+            color = Color.White.copy(alpha = 0.11f),
+            topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+            size = androidx.compose.ui.geometry.Size(
+                width = size.width - inset * 2,
+                height = size.height - inset * 2
+            ),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner - inset, corner - inset),
+            style = Stroke(width = 0.9.dp.toPx())
         )
 
         val arcRect = androidx.compose.ui.geometry.Rect(
@@ -448,13 +525,28 @@ private fun FrameChrome(
             bottom = size.height * 0.92f
         )
         drawArc(
-            color = highlight.copy(alpha = 0.22f),
+            color = highlight.copy(alpha = 0.26f),
             startAngle = -42f,
             sweepAngle = 84f,
             useCenter = false,
             topLeft = arcRect.topLeft,
             size = arcRect.size,
             style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+        )
+
+        drawRoundRect(
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    Color.Transparent,
+                    Color.White.copy(alpha = 0.08f),
+                    Color.Transparent
+                ),
+                start = androidx.compose.ui.geometry.Offset(size.width * 0.55f, 0f),
+                end = androidx.compose.ui.geometry.Offset(size.width, size.height)
+            ),
+            topLeft = androidx.compose.ui.geometry.Offset(size.width * 0.52f, -size.height * 0.05f),
+            size = androidx.compose.ui.geometry.Size(size.width * 0.44f, size.height * 0.72f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.2f, size.width * 0.2f)
         )
     }
 }
@@ -490,6 +582,36 @@ private fun AtmosphericBackdrop(
                 color = palette.ambientEnd.copy(alpha = if (darkTheme) 0.14f else 0.08f),
                 radius = maxDim * 0.58f,
                 center = androidx.compose.ui.geometry.Offset(size.width * 0.8f - (driftOffset * 0.35f), size.height * 0.85f)
+            )
+
+            drawRoundRect(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = if (darkTheme) 0.08f else 0.14f),
+                        Color.Transparent,
+                        Color.White.copy(alpha = if (darkTheme) 0.03f else 0.06f)
+                    ),
+                    start = androidx.compose.ui.geometry.Offset(-size.width * 0.08f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(size.width * 0.62f, size.height)
+                ),
+                topLeft = androidx.compose.ui.geometry.Offset(size.width * 0.04f + driftOffset * 0.2f, -size.height * 0.08f),
+                size = androidx.compose.ui.geometry.Size(size.width * 0.52f, size.height * 0.92f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.24f, size.width * 0.24f)
+            )
+
+            drawRoundRect(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.White.copy(alpha = if (darkTheme) 0.06f else 0.1f),
+                        Color.Transparent
+                    ),
+                    start = androidx.compose.ui.geometry.Offset(size.width * 0.62f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(size.width, size.height)
+                ),
+                topLeft = androidx.compose.ui.geometry.Offset(size.width * 0.66f - driftOffset * 0.1f, -size.height * 0.02f),
+                size = androidx.compose.ui.geometry.Size(size.width * 0.28f, size.height * 0.78f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.18f, size.width * 0.18f)
             )
         }
     }
@@ -564,14 +686,6 @@ fun getTimeData(unit: TimeUnit, preferences: UserPreferencesData): TimeData {
             val remaining = TimeCalculations.minutesLeftInHour()
             TimeData(total, elapsed, TimeCalculations.hourLabel(), "$remaining left", (elapsed.toFloat() / total) * 100f)
         }
-    }
-}
-
-private fun parseColor(hex: String): Color {
-    return try {
-        Color(android.graphics.Color.parseColor(hex))
-    } catch (e: Exception) {
-        Color.White
     }
 }
 
