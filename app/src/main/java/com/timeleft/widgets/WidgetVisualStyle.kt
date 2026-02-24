@@ -8,6 +8,7 @@ private const val WIDGET_TEXT_PRIMARY = 0xFFF5F5F5.toInt()
 private const val WIDGET_TEXT_SECONDARY = 0xFFA1A1AA.toInt()
 private const val WIDGET_REMAINING = 0xFFE4E4E7.toInt()
 private const val WIDGET_ELAPSED = 0xFF5A5A5A.toInt()
+private const val WIDGET_CURRENT = 0xFFFF3B30.toInt()
 
 data class WidgetVisualStyle(
     val cardStart: Int,
@@ -28,10 +29,8 @@ data class WidgetCardColors(
     val border: Int
 )
 
+@Suppress("UNUSED_PARAMETER")
 fun widgetVisualStyle(preferences: UserPreferencesData): WidgetVisualStyle {
-    val elapsed = parseUserColor(preferences.elapsedColor, WIDGET_ELAPSED)
-    val remaining = parseUserColor(preferences.remainingColor, WIDGET_REMAINING)
-    val current = parseUserColor(preferences.currentIndicatorColor, remaining)
     return WidgetVisualStyle(
         cardStart = WIDGET_CARD_BASE,
         cardEnd = WIDGET_CARD_BASE,
@@ -39,9 +38,9 @@ fun widgetVisualStyle(preferences: UserPreferencesData): WidgetVisualStyle {
         cardBorder = WIDGET_CARD_BORDER,
         textPrimary = WIDGET_TEXT_PRIMARY,
         textSecondary = WIDGET_TEXT_SECONDARY,
-        elapsedColor = elapsed,
-        remainingColor = remaining,
-        currentColor = current
+        elapsedColor = WIDGET_ELAPSED,
+        remainingColor = WIDGET_REMAINING,
+        currentColor = WIDGET_CURRENT
     )
 }
 
@@ -73,12 +72,4 @@ private fun shiftColor(
     hsv[2] = (hsv[2] * valueMul).coerceIn(0f, 1f)
     val alpha = (android.graphics.Color.alpha(color) * alphaMul).toInt().coerceIn(0, 255)
     return android.graphics.Color.HSVToColor(alpha, hsv)
-}
-
-private fun parseUserColor(value: String, fallback: Int): Int {
-    return try {
-        android.graphics.Color.parseColor(value)
-    } catch (_: IllegalArgumentException) {
-        fallback
-    }
 }

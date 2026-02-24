@@ -76,6 +76,9 @@ import com.timeleft.ui.theme.appPalette
 import com.timeleft.util.TimeCalculations
 import java.time.LocalDate
 
+private val CurrentDotRed = Color(0xFFFF3B30)
+private val ElapsedDotNeutral = Color(0xFF5A5A5A)
+
 /**
  * Main screen — visual-first timeline with atmospheric backgrounds and unit morphing.
  */
@@ -91,9 +94,9 @@ fun LeftScreen(
     val symbolType = SymbolType.fromString(preferences.symbolType)
     val themePack = ThemePack.fromString(preferences.themePack)
     val palette = appPalette(themePack, preferences.darkMode)
-    val elapsedColor = parseUserColor(preferences.elapsedColor, fallback = Color(0xFF5A5A5A))
-    val remainingColor = parseUserColor(preferences.remainingColor, fallback = palette.textPrimary)
-    val currentIndicatorColor = parseUserColor(preferences.currentIndicatorColor, fallback = remainingColor)
+    val elapsedColor = ElapsedDotNeutral
+    val remainingColor = palette.textPrimary
+    val currentIndicatorColor = CurrentDotRed
     val weekElapsedColor = if (isColorClose(elapsedColor, remainingColor)) palette.textSecondary else elapsedColor
     val weekRemainingColor = if (isColorClose(remainingColor, elapsedColor)) palette.textPrimary else remainingColor
     val hideTopBorders = selectedUnit == TimeUnit.LIFE || selectedUnit == TimeUnit.YEAR || selectedUnit == TimeUnit.MONTH
@@ -291,7 +294,7 @@ fun LeftScreen(
                             )
                     ) {
                         FrameChrome(
-                            highlight = palette.accent,
+                            highlight = palette.textPrimary,
                             border = palette.border,
                             modifier = Modifier.matchParentSize()
                         )
@@ -571,14 +574,6 @@ private fun AtmosphericBackdrop(
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(0f, 0f)
             )
         }
-    }
-}
-
-private fun parseUserColor(value: String, fallback: Color): Color {
-    return try {
-        Color(android.graphics.Color.parseColor(value))
-    } catch (_: IllegalArgumentException) {
-        fallback
     }
 }
 

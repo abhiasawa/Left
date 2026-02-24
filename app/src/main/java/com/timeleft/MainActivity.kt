@@ -90,10 +90,10 @@ class MainActivity : ComponentActivity() {
                     onShareClick = {
                         val timeData = getTimeData(selectedUnit, preferences)
                         val palette = appPalette(themePack, preferences.darkMode)
-                        val elapsedColor = parseUserColorInt(preferences.elapsedColor, 0xFF5A5A5A.toInt())
-                        val remainingColor = parseUserColorInt(preferences.remainingColor, palette.textPrimary.toArgb())
+                        val elapsedColor = 0xFF5A5A5A.toInt()
+                        val remainingColor = palette.textPrimary.toArgb()
                         val bgColor = palette.background.toArgb()
-                        val currentColor = parseUserColorInt(preferences.currentIndicatorColor, remainingColor)
+                        val currentColor = 0xFFFF3B30.toInt()
 
                         ShareHelper.shareTimeLeft(
                             context = this@MainActivity,
@@ -201,13 +201,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-}
-
-private fun parseUserColorInt(value: String, fallback: Int): Int {
-    return try {
-        android.graphics.Color.parseColor(value)
-    } catch (_: IllegalArgumentException) {
-        fallback
     }
 }

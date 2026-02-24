@@ -102,14 +102,9 @@ fun SettingsSheet(
     val currentSymbol = SymbolType.fromString(preferences.symbolType)
     val selectedThemePack = ThemePack.fromString(preferences.themePack)
     val palette = appPalette(selectedThemePack, preferences.darkMode)
-    val elapsedColor = parseUserColor(
-        value = preferences.elapsedColor,
-        fallback = themeElapsedColorDefaults(selectedThemePack).first()
-    )
-    val remainingColor = parseUserColor(
-        value = preferences.remainingColor,
-        fallback = palette.textPrimary
-    )
+    val elapsedColor = themeElapsedColorDefaults(selectedThemePack).first()
+    val remainingColor = palette.textPrimary
+    val currentIndicatorColor = Color(0xFFFF3B30)
 
     val birthDate = preferences.birthDate
     val gender = preferences.gender
@@ -183,6 +178,7 @@ fun SettingsSheet(
                     symbolType = currentSymbol,
                     elapsedColor = elapsedColor,
                     remainingColor = remainingColor,
+                    currentIndicatorColor = currentIndicatorColor,
                     dotSize = 7.dp,
                     spacing = 2.dp,
                     showCurrentIndicator = true,
@@ -798,12 +794,4 @@ private fun colorToHex(color: Color): String {
         (color.green * 255).toInt(),
         (color.blue * 255).toInt()
     )
-}
-
-private fun parseUserColor(value: String, fallback: Color): Color {
-    return try {
-        Color(android.graphics.Color.parseColor(value))
-    } catch (_: IllegalArgumentException) {
-        fallback
-    }
 }

@@ -52,7 +52,7 @@ fun appPalette(themePack: ThemePack, darkTheme: Boolean): AppPalette {
             border = Color(0xFF343434),
             textPrimary = Color(0xFFEDE9DF),
             textSecondary = Color(0xFF9A958C),
-            accent = Color(0xFFFF3B30),
+            accent = Color(0xFFEDE9DF),
             ambientStart = Color(0xFF0A0A0A),
             ambientMiddle = Color(0xFF111111),
             ambientEnd = Color(0xFF1A1A1A)
@@ -76,7 +76,6 @@ fun appPalette(themePack: ThemePack, darkTheme: Boolean): AppPalette {
 fun themeRemainingColorDefaults(themePack: ThemePack): List<Color> {
     return listOf(
         Color(0xFFEDE9DF),
-        Color(0xFFFF3B30),
         Color(0xFFFF9500),
         Color(0xFFFFCC00),
         Color(0xFF34C759),
@@ -92,7 +91,6 @@ fun themeRemainingColorDefaults(themePack: ThemePack): List<Color> {
 fun themeElapsedColorDefaults(themePack: ThemePack): List<Color> {
     return listOf(
         Color(0xFF5A5A5A),
-        Color(0xFF4A1A1A),
         Color(0xFF4A3A1A),
         Color(0xFF1A3A1A),
         Color(0xFF1A2A3A),
