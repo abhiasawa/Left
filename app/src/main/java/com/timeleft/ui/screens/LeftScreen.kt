@@ -59,7 +59,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -73,9 +72,7 @@ import com.timeleft.ui.components.DotGrid
 import com.timeleft.ui.components.MonthCalendar
 import com.timeleft.ui.components.TimeSelector
 import com.timeleft.ui.theme.ThemePack
-import com.timeleft.ui.theme.ambientBrush
 import com.timeleft.ui.theme.appPalette
-import com.timeleft.ui.theme.elapsedDotColor
 import com.timeleft.util.TimeCalculations
 import java.time.LocalDate
 
@@ -94,11 +91,12 @@ fun LeftScreen(
     val symbolType = SymbolType.fromString(preferences.symbolType)
     val themePack = ThemePack.fromString(preferences.themePack)
     val palette = appPalette(themePack, preferences.darkMode)
-    val elapsedColor = elapsedDotColor(themePack, preferences.darkMode)
-    val remainingColor = palette.textPrimary
-    val currentIndicatorColor = remainingColor
+    val elapsedColor = parseUserColor(preferences.elapsedColor, fallback = Color(0xFF5A5A5A))
+    val remainingColor = parseUserColor(preferences.remainingColor, fallback = palette.textPrimary)
+    val currentIndicatorColor = parseUserColor(preferences.currentIndicatorColor, fallback = remainingColor)
     val weekElapsedColor = if (isColorClose(elapsedColor, remainingColor)) palette.textSecondary else elapsedColor
     val weekRemainingColor = if (isColorClose(remainingColor, elapsedColor)) palette.textPrimary else remainingColor
+    val hideTopBorders = selectedUnit == TimeUnit.LIFE || selectedUnit == TimeUnit.YEAR || selectedUnit == TimeUnit.MONTH
 
     val hasLifeData = preferences.birthDate != null
     val showLifeOption = hasLifeData
@@ -121,15 +119,6 @@ fun LeftScreen(
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "screenMotion")
-    val ambientDrift by infiniteTransition.animateFloat(
-        initialValue = -34f,
-        targetValue = 34f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 14000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "ambientDrift"
-    )
     val frameBreath by infiniteTransition.animateFloat(
         initialValue = 0.995f,
         targetValue = 1.01f,
@@ -173,9 +162,6 @@ fun LeftScreen(
         AtmosphericBackdrop(
             themePack = themePack,
             darkTheme = preferences.darkMode,
-            selectedUnit = selectedUnit,
-            progressPercent = timeData.progressPercent,
-            driftOffset = ambientDrift,
             modifier = Modifier.matchParentSize()
         )
 
@@ -233,10 +219,16 @@ fun LeftScreen(
                                         )
                                     )
                                 )
-                                .border(
-                                    width = 1.dp,
-                                    color = palette.textPrimary.copy(alpha = 0.16f),
-                                    shape = RoundedCornerShape(12.dp)
+                                .then(
+                                    if (hideTopBorders) {
+                                        Modifier
+                                    } else {
+                                        Modifier.border(
+                                            width = 1.dp,
+                                            color = palette.textPrimary.copy(alpha = 0.16f),
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                    }
                                 )
                         ) {
                             Icon(
@@ -260,7 +252,8 @@ fun LeftScreen(
                     TimeSelector(
                         selectedUnit = selectedUnit,
                         onUnitSelected = onUnitSelected,
-                        showLifeOption = showLifeOption
+                        showLifeOption = showLifeOption,
+                        showBorders = !hideTopBorders
                     )
                 }
 
@@ -555,65 +548,37 @@ private fun FrameChrome(
 private fun AtmosphericBackdrop(
     themePack: ThemePack,
     darkTheme: Boolean,
-    selectedUnit: TimeUnit,
-    progressPercent: Float,
-    driftOffset: Float,
     modifier: Modifier = Modifier
 ) {
-    val progress = (progressPercent / 100f).coerceIn(0f, 1f)
     val palette = appPalette(themePack, darkTheme)
-    val glowColor = lerp(palette.accent, palette.textPrimary, 0.22f)
 
     Box(
         modifier = modifier
-            .background(ambientBrush(themePack, darkTheme, selectedUnit))
+            .background(palette.background)
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
-            val maxDim = size.maxDimension
-            val centerX = size.width * (0.25f + progress * 0.5f) + driftOffset
-            val centerY = size.height * (0.2f + (1f - progress) * 0.5f)
-
-            drawCircle(
-                color = glowColor.copy(alpha = if (darkTheme) 0.2f else 0.1f),
-                radius = maxDim * 0.42f,
-                center = androidx.compose.ui.geometry.Offset(centerX, centerY)
-            )
-            drawCircle(
-                color = palette.ambientEnd.copy(alpha = if (darkTheme) 0.14f else 0.08f),
-                radius = maxDim * 0.58f,
-                center = androidx.compose.ui.geometry.Offset(size.width * 0.8f - (driftOffset * 0.35f), size.height * 0.85f)
-            )
-
             drawRoundRect(
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = if (darkTheme) 0.08f else 0.14f),
+                        palette.surface.copy(alpha = if (darkTheme) 0.22f else 0.12f),
                         Color.Transparent,
-                        Color.White.copy(alpha = if (darkTheme) 0.03f else 0.06f)
+                        palette.surfaceVariant.copy(alpha = if (darkTheme) 0.14f else 0.08f)
                     ),
-                    start = androidx.compose.ui.geometry.Offset(-size.width * 0.08f, 0f),
-                    end = androidx.compose.ui.geometry.Offset(size.width * 0.62f, size.height)
-                ),
-                topLeft = androidx.compose.ui.geometry.Offset(size.width * 0.04f + driftOffset * 0.2f, -size.height * 0.08f),
-                size = androidx.compose.ui.geometry.Size(size.width * 0.52f, size.height * 0.92f),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.24f, size.width * 0.24f)
-            )
-
-            drawRoundRect(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color.Transparent,
-                        Color.White.copy(alpha = if (darkTheme) 0.06f else 0.1f),
-                        Color.Transparent
-                    ),
-                    start = androidx.compose.ui.geometry.Offset(size.width * 0.62f, 0f),
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
                     end = androidx.compose.ui.geometry.Offset(size.width, size.height)
                 ),
-                topLeft = androidx.compose.ui.geometry.Offset(size.width * 0.66f - driftOffset * 0.1f, -size.height * 0.02f),
-                size = androidx.compose.ui.geometry.Size(size.width * 0.28f, size.height * 0.78f),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.18f, size.width * 0.18f)
+                size = size,
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(0f, 0f)
             )
         }
+    }
+}
+
+private fun parseUserColor(value: String, fallback: Color): Color {
+    return try {
+        Color(android.graphics.Color.parseColor(value))
+    } catch (_: IllegalArgumentException) {
+        fallback
     }
 }
 

@@ -9,7 +9,7 @@ fun darkDotWidgetStyle(): WidgetVisualStyle {
         textPrimary = 0xFFF5F5F5.toInt(),
         textSecondary = 0xFFA1A1AA.toInt(),
         elapsedColor = 0xFF3F3F46.toInt(),
-        remainingColor = 0xFFFFFFFF.toInt(),
-        currentColor = 0xFFFF3B30.toInt()
+        remainingColor = 0xFFEDE9DF.toInt(),
+        currentColor = 0xFFEDE9DF.toInt()
     )
 }

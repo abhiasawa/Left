@@ -27,7 +27,6 @@ class MonthProgressWidget : AtlasWidgetBase() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val preferences = UserPreferencesRepository(context).preferences.first()
         val style = widgetVisualStyle(preferences)
-        val card = style.cardColors(hueShift = 52f, saturationMul = 1.06f, valueMul = 1.1f, glowAlphaBoost = 1.26f)
 
         val total = TimeCalculations.totalDaysInMonth()
         val elapsed = TimeCalculations.daysElapsedInMonth()
@@ -39,9 +38,9 @@ class MonthProgressWidget : AtlasWidgetBase() {
         val startOffset = firstOfMonth.dayOfWeek.value - 1
 
         val backgrounds = BitmapVariants(
-            square = WidgetRenderer.renderAtlasCard(1080, 1080, card.start, card.end, card.glow, card.border),
-            wide = WidgetRenderer.renderAtlasCard(1500, 900, card.start, card.end, card.glow, card.border),
-            tall = WidgetRenderer.renderAtlasCard(900, 1500, card.start, card.end, card.glow, card.border)
+            square = WidgetRenderer.renderAtlasCard(1080, 1080, style.cardStart, style.cardEnd, style.cardGlow, style.cardBorder),
+            wide = WidgetRenderer.renderAtlasCard(1500, 900, style.cardStart, style.cardEnd, style.cardGlow, style.cardBorder),
+            tall = WidgetRenderer.renderAtlasCard(900, 1500, style.cardStart, style.cardEnd, style.cardGlow, style.cardBorder)
         )
         val fields = BitmapVariants(
             square = WidgetRenderer.renderAtlasCalendarField(880, 560, total, elapsed, startOffset, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000),

@@ -21,7 +21,7 @@ import kotlin.math.sin
  * Day visualization: dots arranged in a circular ring, one per hour.
  *
  * Each dot represents one active hour. Elapsed hours are dimmed,
- * the current hour pulses red, remaining hours are bright. Every 6th
+ * the current hour pulses with a subtle glow, remaining hours are bright. Every 6th
  * dot is larger as a quadrant marker (midnight/6am/noon/6pm).
  * Mirrors the HourClock's circular language at a different time scale.
  */

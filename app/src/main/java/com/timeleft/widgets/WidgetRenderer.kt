@@ -3,12 +3,8 @@ package com.timeleft.widgets
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.RectF
-import android.graphics.RadialGradient
-import android.graphics.Shader
 import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.min
@@ -32,87 +28,20 @@ object WidgetRenderer {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val rect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+        val cardColor = blendColors(startColor, endColor, 0.5f)
 
         val basePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            shader = LinearGradient(
-                0f,
-                0f,
-                width.toFloat(),
-                height.toFloat(),
-                startColor,
-                endColor,
-                Shader.TileMode.CLAMP
-            )
+            style = Paint.Style.FILL
+            color = cardColor
         }
         canvas.drawRoundRect(rect, cornerRadius, cornerRadius, basePaint)
 
-        val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            shader = RadialGradient(
-                width * 0.22f,
-                height * 0.2f,
-                maxOf(width, height) * 0.7f,
-                adjustAlpha(glowColor, 0.7f),
-                Color.TRANSPARENT,
-                Shader.TileMode.CLAMP
-            )
-        }
-        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, glowPaint)
-
-        val contourPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = (min(width, height) * 0.0042f).coerceAtLeast(1.6f)
-            color = adjustAlpha(borderColor, 0.26f)
-        }
-
-        for (i in 0..5) {
-            val inset = i * min(width, height) * 0.085f
-            val contourRect = RectF(
-                inset,
-                inset * 0.7f,
-                width - inset * 0.6f,
-                height - inset
-            )
-            canvas.drawArc(contourRect, -70f + i * 9f, 120f + i * 10f, false, contourPaint)
-        }
-
-        val meridianPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = (min(width, height) * 0.0025f).coerceAtLeast(1.2f)
-            color = adjustAlpha(borderColor, 0.22f)
-        }
-        for (i in 0..4) {
-            val x = width * (0.16f + i * 0.17f)
-            val path = Path().apply {
-                moveTo(x, -height * 0.1f)
-                cubicTo(
-                    x - width * 0.1f,
-                    height * 0.2f,
-                    x + width * 0.1f,
-                    height * 0.7f,
-                    x,
-                    height * 1.05f
-                )
-            }
-            canvas.drawPath(path, meridianPaint)
-        }
-
-        val grainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-            color = adjustAlpha(borderColor, 0.2f)
-        }
-        for (x in 0 until width step 13) {
-            for (y in 0 until height step 13) {
-                val pseudoRandom = (x * 17 + y * 31 + width * 3 + height * 7) % 29
-                if (pseudoRandom < 3) {
-                    canvas.drawCircle(x.toFloat(), y.toFloat(), 0.9f, grainPaint)
-                }
-            }
-        }
+        val resolvedBorder = if (Color.alpha(borderColor) > 0) borderColor else adjustAlpha(glowColor, 0.35f)
 
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = 2f
-            color = adjustAlpha(borderColor, 0.75f)
+            color = adjustAlpha(resolvedBorder, 0.92f)
         }
         canvas.drawRoundRect(
             RectF(1f, 1f, width - 1f, height - 1f),
@@ -148,20 +77,17 @@ object WidgetRenderer {
 
         val cellW = width.toFloat() / cols
         val cellH = height.toFloat() / rows
-        val cell = min(cellW, cellH)
-        val radius = cell * 0.35f
-        val offsetX = (width - cols * cell) / 2f
-        val offsetY = (height - rows * cell) / 2f
+        val radius = min(cellW, cellH) * 0.44f
 
         if (emphasizeBand) {
             val bandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
-                strokeWidth = (cell * 0.24f).coerceAtLeast(3f)
+                strokeWidth = (min(cellW, cellH) * 0.22f).coerceAtLeast(3f)
                 color = adjustAlpha(currentColor, 0.12f)
             }
             val bandRow = (elapsedUnits / cols).coerceIn(0, rows - 1)
-            val y = offsetY + bandRow * cell + cell / 2f
-            canvas.drawLine(offsetX, y, offsetX + cols * cell, y, bandPaint)
+            val y = bandRow * cellH + cellH / 2f
+            canvas.drawLine(0f, y, width.toFloat(), y, bandPaint)
         }
 
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -173,8 +99,8 @@ object WidgetRenderer {
         for (i in 0 until totalUnits) {
             val col = i % cols
             val row = i / cols
-            val cx = offsetX + col * cell + cell / 2f
-            val cy = offsetY + row * cell + cell / 2f
+            val cx = col * cellW + cellW / 2f
+            val cy = row * cellH + cellH / 2f
 
             paint.color = when {
                 i == elapsedUnits -> currentColor
@@ -185,7 +111,7 @@ object WidgetRenderer {
             if (shadowPaint != null) {
                 shadowPaint.color = paint.color
                 shadowPaint.alpha = if (i == elapsedUnits) 112 else 56
-                canvas.drawCircle(cx, cy + radius * 0.3f, radius * 1.2f, shadowPaint)
+                canvas.drawCircle(cx, cy + radius * 0.2f, radius * 1.08f, shadowPaint)
             }
             canvas.drawCircle(cx, cy, radius, paint)
         }
@@ -215,19 +141,16 @@ object WidgetRenderer {
         val rows = ceil(totalSlots.toFloat() / cols).toInt().coerceAtLeast(1)
         val cellW = width.toFloat() / cols
         val cellH = height.toFloat() / rows
-        val cell = min(cellW, cellH)
-        val radius = cell * 0.34f
-        val offsetX = (width - cols * cell) / 2f
-        val offsetY = (height - rows * cell) / 2f
+        val radius = min(cellW, cellH) * 0.43f
 
         val ridgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = (cell * 0.08f).coerceAtLeast(1.4f)
+            strokeWidth = (min(cellW, cellH) * 0.08f).coerceAtLeast(1.4f)
             color = adjustAlpha(currentColor, 0.2f)
         }
         for (r in 0 until rows) {
-            val y = offsetY + r * cell + cell * 0.5f
-            canvas.drawLine(offsetX, y, offsetX + cols * cell, y, ridgePaint)
+            val y = r * cellH + cellH * 0.5f
+            canvas.drawLine(0f, y, width.toFloat(), y, ridgePaint)
         }
 
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -237,8 +160,8 @@ object WidgetRenderer {
             val slot = startOffset + day
             val col = slot % cols
             val row = slot / cols
-            val cx = offsetX + col * cell + cell / 2f
-            val cy = offsetY + row * cell + cell / 2f
+            val cx = col * cellW + cellW / 2f
+            val cy = row * cellH + cellH / 2f
 
             paint.color = when {
                 day == elapsedDays -> currentColor
@@ -248,7 +171,7 @@ object WidgetRenderer {
 
             shadow.color = paint.color
             shadow.alpha = if (day == elapsedDays) 115 else 52
-            canvas.drawCircle(cx, cy + radius * 0.28f, radius * 1.15f, shadow)
+            canvas.drawCircle(cx, cy + radius * 0.2f, radius * 1.08f, shadow)
             canvas.drawCircle(cx, cy, radius, paint)
         }
 
@@ -275,7 +198,7 @@ object WidgetRenderer {
         val cx = width / 2f
         val cy = height / 2f
         val maxDim = min(width, height).toFloat()
-        val radius = maxDim * 0.36f
+        val radius = maxDim * 0.42f
 
         val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
@@ -291,7 +214,7 @@ object WidgetRenderer {
         } else {
             null
         }
-        val minor = maxDim * 0.023f
+        val minor = maxDim * 0.027f
         val major = minor * 1.5f
 
         for (i in 0 until totalUnits) {
@@ -565,5 +488,15 @@ object WidgetRenderer {
     private fun adjustAlpha(color: Int, alphaFraction: Float): Int {
         val alpha = (Color.alpha(color) * alphaFraction).toInt().coerceIn(0, 255)
         return Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
+    }
+
+    private fun blendColors(first: Int, second: Int, ratio: Float): Int {
+        val clamped = ratio.coerceIn(0f, 1f)
+        val inv = 1f - clamped
+        val a = (Color.alpha(first) * inv + Color.alpha(second) * clamped).toInt()
+        val r = (Color.red(first) * inv + Color.red(second) * clamped).toInt()
+        val g = (Color.green(first) * inv + Color.green(second) * clamped).toInt()
+        val b = (Color.blue(first) * inv + Color.blue(second) * clamped).toInt()
+        return Color.argb(a, r, g, b)
     }
 }

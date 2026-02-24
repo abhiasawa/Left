@@ -26,7 +26,6 @@ class LifeProgressWidget : AtlasWidgetBase() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val prefs = UserPreferencesRepository(context).preferences.first()
         val style = widgetVisualStyle(prefs)
-        val card = style.cardColors(hueShift = -28f, saturationMul = 1.12f, valueMul = 1.0f, glowAlphaBoost = 1.2f)
 
         val birthDate = prefs.birthDate
         val lifespan = prefs.expectedLifespan
@@ -36,9 +35,9 @@ class LifeProgressWidget : AtlasWidgetBase() {
         val percent = ((yearsLived.toFloat() / lifespan.coerceAtLeast(1)) * 100f).toInt()
 
         val backgrounds = BitmapVariants(
-            square = WidgetRenderer.renderAtlasCard(1080, 1080, card.start, card.end, card.glow, card.border),
-            wide = WidgetRenderer.renderAtlasCard(1500, 900, card.start, card.end, card.glow, card.border),
-            tall = WidgetRenderer.renderAtlasCard(900, 1500, card.start, card.end, card.glow, card.border)
+            square = WidgetRenderer.renderAtlasCard(1080, 1080, style.cardStart, style.cardEnd, style.cardGlow, style.cardBorder),
+            wide = WidgetRenderer.renderAtlasCard(1500, 900, style.cardStart, style.cardEnd, style.cardGlow, style.cardBorder),
+            tall = WidgetRenderer.renderAtlasCard(900, 1500, style.cardStart, style.cardEnd, style.cardGlow, style.cardBorder)
         )
         val fields = BitmapVariants(
             square = WidgetRenderer.renderAtlasDotField(880, 540, lifespan, yearsLived, style.elapsedColor, style.remainingColor, style.currentColor, 0x00000000, columns = 12),

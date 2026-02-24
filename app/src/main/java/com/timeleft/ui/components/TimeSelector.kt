@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -39,7 +40,8 @@ fun TimeSelector(
     selectedUnit: TimeUnit,
     onUnitSelected: (TimeUnit) -> Unit,
     modifier: Modifier = Modifier,
-    showLifeOption: Boolean = true
+    showLifeOption: Boolean = true,
+    showBorders: Boolean = true
 ) {
     val units = if (showLifeOption) TimeUnit.entries else TimeUnit.entries.filter { it != TimeUnit.LIFE }
     val haptic = LocalHapticFeedback.current
@@ -50,11 +52,24 @@ fun TimeSelector(
             .fillMaxWidth()
             .padding(horizontal = 12.dp)
             .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(18.dp)
+            .background(
+                brush = Brush.linearGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f)
+                    )
+                )
+            )
+            .then(
+                if (showBorders) {
+                    Modifier.border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.16f),
+                        shape = RoundedCornerShape(18.dp)
+                    )
+                } else {
+                    Modifier
+                }
             )
     ) {
         Row(
@@ -68,7 +83,7 @@ fun TimeSelector(
                 val isSelected = unit == selectedUnit
                 val textColor by animateColorAsState(
                     targetValue = if (isSelected) {
-                        MaterialTheme.colorScheme.background
+                        MaterialTheme.colorScheme.onBackground
                     } else {
                         MaterialTheme.colorScheme.onBackground.copy(alpha = 0.52f)
                     },
@@ -80,11 +95,29 @@ fun TimeSelector(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(
+                        .then(
                             if (isSelected) {
-                                MaterialTheme.colorScheme.onBackground
+                                Modifier.background(
+                                    brush = Brush.linearGradient(
+                                        listOf(
+                                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.24f),
+                                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                                        )
+                                    )
+                                )
                             } else {
-                                Color.Transparent
+                                Modifier
+                            }
+                        )
+                        .then(
+                            if (showBorders && isSelected) {
+                                Modifier.border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.22f),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                            } else {
+                                Modifier
                             }
                         )
                         .clickable(

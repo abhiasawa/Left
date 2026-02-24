@@ -21,7 +21,7 @@ import kotlin.math.sin
  * Hour visualization: 60 dots arranged in a circle like a clock face.
  *
  * Each dot represents one minute. Elapsed minutes are dimmed, the current
- * minute pulses red, remaining minutes are bright. Every 5th dot is larger
+ * minute pulses with a subtle glow, remaining minutes are bright. Every 5th dot is larger
  * (like hour markers on a clock). The ring fills the available space,
  * connecting to the app's dot language in a circular form.
  */

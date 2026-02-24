@@ -102,7 +102,12 @@ fun WidgetHeader(
             Box(
                 modifier = GlanceModifier
                     .cornerRadius(8.dp)
-                    .background(ColorProvider(Color(style.cardBorder), Color(style.cardBorder)))
+                    .background(
+                        ColorProvider(
+                            Color(style.cardBorder).copy(alpha = 0.56f),
+                            Color(style.cardBorder).copy(alpha = 0.56f)
+                        )
+                    )
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(

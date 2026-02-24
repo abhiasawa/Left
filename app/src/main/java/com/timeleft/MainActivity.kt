@@ -24,7 +24,6 @@ import com.timeleft.ui.screens.getTimeData
 import com.timeleft.ui.theme.ThemePack
 import com.timeleft.ui.theme.TimeLeftTheme
 import com.timeleft.ui.theme.appPalette
-import com.timeleft.ui.theme.elapsedDotColor
 import com.timeleft.util.NotificationHelper
 import com.timeleft.util.ShareHelper
 import kotlinx.coroutines.launch
@@ -91,10 +90,10 @@ class MainActivity : ComponentActivity() {
                     onShareClick = {
                         val timeData = getTimeData(selectedUnit, preferences)
                         val palette = appPalette(themePack, preferences.darkMode)
-                        val elapsedColor = elapsedDotColor(themePack, preferences.darkMode).toArgb()
-                        val remainingColor = palette.textPrimary.toArgb()
+                        val elapsedColor = parseUserColorInt(preferences.elapsedColor, 0xFF5A5A5A.toInt())
+                        val remainingColor = parseUserColorInt(preferences.remainingColor, palette.textPrimary.toArgb())
                         val bgColor = palette.background.toArgb()
-                        val currentColor = remainingColor
+                        val currentColor = parseUserColorInt(preferences.currentIndicatorColor, remainingColor)
 
                         ShareHelper.shareTimeLeft(
                             context = this@MainActivity,
@@ -202,5 +201,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+private fun parseUserColorInt(value: String, fallback: Int): Int {
+    return try {
+        android.graphics.Color.parseColor(value)
+    } catch (_: IllegalArgumentException) {
+        fallback
     }
 }

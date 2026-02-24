@@ -49,7 +49,7 @@ fun DotGrid(
     symbolType: SymbolType,
     elapsedColor: Color,
     remainingColor: Color,
-    currentIndicatorColor: Color = Color(0xFFFF3B30),
+    currentIndicatorColor: Color = remainingColor,
     columns: Int = 0,
     dotSize: Dp = 12.dp,
     spacing: Dp = 4.dp,

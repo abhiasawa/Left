@@ -23,6 +23,8 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.timeleft.MainActivity
 import com.timeleft.data.db.AppDatabase
+import com.timeleft.data.preferences.UserPreferencesRepository
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -30,7 +32,8 @@ import java.time.temporal.ChronoUnit
 class CountdownWidget : AtlasWidgetBase() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val style = darkDotWidgetStyle()
+        val preferences = UserPreferencesRepository(context).preferences.first()
+        val style = widgetVisualStyle(preferences)
 
         val db = AppDatabase.getDatabase(context)
         val dates = db.customDateDao().getAllCustomDates().firstOrNull() ?: emptyList()

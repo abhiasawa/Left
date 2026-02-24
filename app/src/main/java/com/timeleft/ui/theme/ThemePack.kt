@@ -52,7 +52,7 @@ fun appPalette(themePack: ThemePack, darkTheme: Boolean): AppPalette {
             border = Color(0xFF343434),
             textPrimary = Color(0xFFEDE9DF),
             textSecondary = Color(0xFF9A958C),
-            accent = Color(0xFFEDE9DF),
+            accent = Color(0xFFFF3B30),
             ambientStart = Color(0xFF0A0A0A),
             ambientMiddle = Color(0xFF111111),
             ambientEnd = Color(0xFF1A1A1A)
@@ -74,12 +74,30 @@ fun appPalette(themePack: ThemePack, darkTheme: Boolean): AppPalette {
 
 @Suppress("UNUSED_PARAMETER")
 fun themeRemainingColorDefaults(themePack: ThemePack): List<Color> {
-    return listOf(Color(0xFFEDE9DF))
+    return listOf(
+        Color(0xFFEDE9DF),
+        Color(0xFFFF3B30),
+        Color(0xFFFF9500),
+        Color(0xFFFFCC00),
+        Color(0xFF34C759),
+        Color(0xFF5AC8FA),
+        Color(0xFF007AFF),
+        Color(0xFFAF52DE),
+        Color(0xFFFF2D55),
+        Color(0xFF8E8E93)
+    )
 }
 
 @Suppress("UNUSED_PARAMETER")
 fun themeElapsedColorDefaults(themePack: ThemePack): List<Color> {
-    return listOf(Color(0xFF5A5A5A), Color(0xFF8F8779))
+    return listOf(
+        Color(0xFF5A5A5A),
+        Color(0xFF4A1A1A),
+        Color(0xFF4A3A1A),
+        Color(0xFF1A3A1A),
+        Color(0xFF1A2A3A),
+        Color(0xFF2A1A3A)
+    )
 }
 
 fun ambientBrush(themePack: ThemePack, darkTheme: Boolean, unit: TimeUnit): Brush {

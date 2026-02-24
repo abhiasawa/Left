@@ -20,7 +20,7 @@ import kotlin.math.min
  * Week visualization: 7 large dots in a horizontal row.
  *
  * Each dot represents one day (Monday through Sunday). Elapsed days
- * are dimmed, the current day pulses red, remaining days are bright.
+ * are dimmed, the current day pulses with a subtle glow, remaining days are bright.
  * Purely visual — no day names, no text. The count of 7 is universally
  * recognizable as a week.
  */

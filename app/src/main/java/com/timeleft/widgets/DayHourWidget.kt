@@ -14,12 +14,15 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
 import com.timeleft.MainActivity
+import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
+import kotlinx.coroutines.flow.first
 
 class DayHourWidget : AtlasWidgetBase() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val style = darkDotWidgetStyle()
+        val preferences = UserPreferencesRepository(context).preferences.first()
+        val style = widgetVisualStyle(preferences)
 
         val totalHours = TimeCalculations.totalHoursInDay()
         val elapsedHours = TimeCalculations.hoursElapsedInDay()

@@ -1,7 +1,5 @@
 package com.timeleft.ui.components
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,10 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,7 +29,7 @@ import com.timeleft.domain.models.SymbolType
  * Flow-row grid of tappable symbol previews.
  *
  * Each symbol shows its Unicode glyph (or "12" for the number type).
- * The selected chip gets a highlighted background + border with a smooth color animation.
+ * The selected chip gets a highlighted glass background + border.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -53,25 +51,37 @@ fun SymbolPicker(
         ) {
             SymbolType.entries.forEach { symbol ->
                 val isSelected = symbol == selectedSymbol
-                val bgColor by animateColorAsState(
-                    targetValue = if (isSelected) {
-                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f)
-                    } else Color.Transparent,
-                    animationSpec = tween(200),
-                    label = "symbolBg"
-                )
-
                 Box(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(bgColor)
+                        .background(
+                            if (isSelected) {
+                                Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f)
+                                    )
+                                )
+                            } else {
+                                Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f),
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.03f)
+                                    )
+                                )
+                            }
+                        )
                         .then(
                             if (isSelected) Modifier.border(
                                 1.dp,
-                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
+                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.32f),
                                 RoundedCornerShape(10.dp)
-                            ) else Modifier
+                            ) else Modifier.border(
+                                1.dp,
+                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                                RoundedCornerShape(10.dp)
+                            )
                         )
                         .clickable { onSymbolSelected(symbol) },
                     contentAlignment = Alignment.Center
@@ -118,7 +128,14 @@ fun ColorPicker(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(color)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    color.copy(alpha = 0.9f),
+                                    color.copy(alpha = 0.72f)
+                                )
+                            )
+                        )
                         .then(
                             if (isSelected) Modifier.border(
                                 2.dp,
@@ -126,7 +143,7 @@ fun ColorPicker(
                                 CircleShape
                             ) else Modifier.border(
                                 1.dp,
-                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.24f),
                                 CircleShape
                             )
                         )

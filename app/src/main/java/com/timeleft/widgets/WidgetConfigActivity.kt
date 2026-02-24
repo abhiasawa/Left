@@ -129,15 +129,26 @@ class WidgetConfigActivity : ComponentActivity() {
                                 .padding(vertical = 4.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(
-                                    if (isSelected) MaterialTheme.colorScheme.onBackground.copy(alpha = 0.16f)
-                                    else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f)
+                                    Brush.linearGradient(
+                                        if (isSelected) {
+                                            listOf(
+                                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f)
+                                            )
+                                        } else {
+                                            listOf(
+                                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.04f)
+                                            )
+                                        }
+                                    )
                                 )
                                 .border(
                                     width = if (isSelected) 1.5.dp else 1.dp,
                                     color = if (isSelected) {
-                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f)
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
                                     } else {
-                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
                                     },
                                     shape = RoundedCornerShape(12.dp)
                                 )
@@ -160,13 +171,25 @@ class WidgetConfigActivity : ComponentActivity() {
                                         modifier = Modifier
                                             .size(24.dp)
                                             .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.onBackground),
+                                            .background(
+                                                Brush.linearGradient(
+                                                    listOf(
+                                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.24f),
+                                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                                                    )
+                                                )
+                                            )
+                                            .border(
+                                                width = 1.dp,
+                                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                                                shape = CircleShape
+                                            ),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             Icons.Default.Check,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.background,
+                                            tint = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.size(16.dp)
                                         )
                                     }
@@ -182,7 +205,19 @@ class WidgetConfigActivity : ComponentActivity() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.onBackground)
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.24f),
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                                    )
+                                )
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
                             .clickable {
                                 // Confirm the widget
                                 val resultValue = Intent().apply {
@@ -201,7 +236,7 @@ class WidgetConfigActivity : ComponentActivity() {
                         Text(
                             text = "Add Widget",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.background,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.SemiBold
                         )
                     }

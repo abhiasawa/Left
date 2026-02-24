@@ -1,10 +1,13 @@
 package com.timeleft.widgets
 
-import androidx.compose.ui.graphics.toArgb
 import com.timeleft.data.preferences.UserPreferencesData
-import com.timeleft.ui.theme.ThemePack
-import com.timeleft.ui.theme.appPalette
-import com.timeleft.ui.theme.elapsedDotColor
+
+private const val WIDGET_CARD_BASE = 0xFF09090B.toInt()
+private const val WIDGET_CARD_BORDER = 0xFF23232A.toInt()
+private const val WIDGET_TEXT_PRIMARY = 0xFFF5F5F5.toInt()
+private const val WIDGET_TEXT_SECONDARY = 0xFFA1A1AA.toInt()
+private const val WIDGET_REMAINING = 0xFFE4E4E7.toInt()
+private const val WIDGET_ELAPSED = 0xFF5A5A5A.toInt()
 
 data class WidgetVisualStyle(
     val cardStart: Int,
@@ -26,20 +29,19 @@ data class WidgetCardColors(
 )
 
 fun widgetVisualStyle(preferences: UserPreferencesData): WidgetVisualStyle {
-    val themePack = ThemePack.fromString(preferences.themePack)
-    val palette = appPalette(themePack, preferences.darkMode)
-    val elapsed = elapsedDotColor(themePack, preferences.darkMode).toArgb()
-    val remaining = palette.textPrimary.toArgb()
+    val elapsed = parseUserColor(preferences.elapsedColor, WIDGET_ELAPSED)
+    val remaining = parseUserColor(preferences.remainingColor, WIDGET_REMAINING)
+    val current = parseUserColor(preferences.currentIndicatorColor, remaining)
     return WidgetVisualStyle(
-        cardStart = palette.surface.toArgb(),
-        cardEnd = palette.background.toArgb(),
-        cardGlow = palette.accent.copy(alpha = if (preferences.darkMode) 0.26f else 0.16f).toArgb(),
-        cardBorder = palette.border.copy(alpha = if (preferences.darkMode) 0.62f else 0.82f).toArgb(),
-        textPrimary = palette.textPrimary.toArgb(),
-        textSecondary = palette.textSecondary.toArgb(),
+        cardStart = WIDGET_CARD_BASE,
+        cardEnd = WIDGET_CARD_BASE,
+        cardGlow = 0x00000000,
+        cardBorder = WIDGET_CARD_BORDER,
+        textPrimary = WIDGET_TEXT_PRIMARY,
+        textSecondary = WIDGET_TEXT_SECONDARY,
         elapsedColor = elapsed,
         remainingColor = remaining,
-        currentColor = remaining
+        currentColor = current
     )
 }
 
@@ -71,4 +73,12 @@ private fun shiftColor(
     hsv[2] = (hsv[2] * valueMul).coerceIn(0f, 1f)
     val alpha = (android.graphics.Color.alpha(color) * alphaMul).toInt().coerceIn(0, 255)
     return android.graphics.Color.HSVToColor(alpha, hsv)
+}
+
+private fun parseUserColor(value: String, fallback: Int): Int {
+    return try {
+        android.graphics.Color.parseColor(value)
+    } catch (_: IllegalArgumentException) {
+        fallback
+    }
 }

@@ -22,12 +22,15 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.timeleft.MainActivity
+import com.timeleft.data.preferences.UserPreferencesRepository
 import com.timeleft.util.TimeCalculations
+import kotlinx.coroutines.flow.first
 
 class YearBarcodeWidget : AtlasWidgetBase() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val style = darkDotWidgetStyle()
+        val preferences = UserPreferencesRepository(context).preferences.first()
+        val style = widgetVisualStyle(preferences)
 
         val totalDays = TimeCalculations.totalDaysInYear()
         val elapsed = TimeCalculations.daysElapsedInYear()

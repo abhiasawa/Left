@@ -55,7 +55,6 @@ import com.timeleft.ui.components.DotGrid
 import com.timeleft.ui.components.SymbolPicker
 import com.timeleft.ui.theme.ThemePack
 import com.timeleft.ui.theme.appPalette
-import com.timeleft.ui.theme.elapsedDotColor
 import com.timeleft.ui.theme.themeElapsedColorDefaults
 import com.timeleft.ui.theme.themeRemainingColorDefaults
 import com.timeleft.util.TimeCalculations
@@ -103,8 +102,14 @@ fun SettingsSheet(
     val currentSymbol = SymbolType.fromString(preferences.symbolType)
     val selectedThemePack = ThemePack.fromString(preferences.themePack)
     val palette = appPalette(selectedThemePack, preferences.darkMode)
-    val elapsedColor = elapsedDotColor(selectedThemePack, preferences.darkMode)
-    val remainingColor = palette.textPrimary
+    val elapsedColor = parseUserColor(
+        value = preferences.elapsedColor,
+        fallback = themeElapsedColorDefaults(selectedThemePack).first()
+    )
+    val remainingColor = parseUserColor(
+        value = preferences.remainingColor,
+        fallback = palette.textPrimary
+    )
 
     val birthDate = preferences.birthDate
     val gender = preferences.gender
@@ -793,4 +798,12 @@ private fun colorToHex(color: Color): String {
         (color.green * 255).toInt(),
         (color.blue * 255).toInt()
     )
+}
+
+private fun parseUserColor(value: String, fallback: Color): Color {
+    return try {
+        Color(android.graphics.Color.parseColor(value))
+    } catch (_: IllegalArgumentException) {
+        fallback
+    }
 }
