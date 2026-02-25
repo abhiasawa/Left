@@ -23,10 +23,6 @@ Inspired by Tim Urban's "Your Life in Weeks" and [Left - Widgets for Time Left](
 |---|---|
 | ![Month view](screenshots/app-month.png) | ![Week view](screenshots/app-week.png) |
 
-## Social Poster (Instagram)
-
-![Instagram Poster](screenshots/social-poster-instagram-1080x1350.png)
-
 ## Widget Preview
 
 | Year Progress (2x2) | Month Progress (2x2) |
@@ -46,47 +42,30 @@ Also included as share-ready collages:
 - ![Widgets overview](screenshots/widgets-overview.png)
 - ![Widgets full set](screenshots/widgets-full-set.png)
 
-## Install In 2 Minutes (Recommended)
+## Install Directly On Android (No Build Needed)
 
-### Requirements
+Tap this link from your Android phone:
 
-- Android Studio (Ladybug/Hedgehog+)
-- Android SDK + Platform Tools
-- JDK 17
-- Android device or emulator (API 26+)
+- [Download TimeLeft APK (v1.0.0)](https://github.com/abhiasawa/Left/raw/main/downloads/TimeLeft-v1.0.0-debug.apk)
 
-### One-command install (device/emulator connected)
+Install steps:
+
+1. Download the APK.
+2. Open it from the Downloads app.
+3. If prompted, allow installs from your browser/files app.
+4. Tap Install.
+
+## Build From Source (Optional)
 
 ```bash
 ./gradlew :app:installDebug
 ```
 
-This command builds and installs the app directly to your connected Android device/emulator.
-
-## Build APK
+Or build the APK only:
 
 ```bash
 ./gradlew :app:assembleDebug
 ```
-
-APK output:
-
-```text
-app/build/outputs/apk/debug/app-debug.apk
-```
-
-Install manually:
-
-```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
-
-## Run From Android Studio
-
-1. Open this folder in Android Studio.
-2. Let Gradle sync.
-3. Select an emulator/device.
-4. Click **Run**.
 
 ## Core Product Features
 
