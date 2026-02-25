@@ -1,84 +1,111 @@
-# Left (TimeLeft)
+<h1 align="center">Left</h1>
 
-Left is a visual-first Android app for people who want to *feel* time passing, not just read numbers.
+<p align="center">
+  <strong>See your time as a living visual — not a number.</strong>
+</p>
 
-Track your life, year, month, week, day, and hour with clean dot-based visuals and home screen widgets.
+<p align="center">
+  Left is an Android app that turns your life, year, month, week, day, and hour into clean visual timelines and homescreen widgets.
+</p>
+
+<p align="center">
+  <a href="#install-in-60-seconds">Install</a> ·
+  <a href="#why-people-love-left">Why Left</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#widgets">Widgets</a> ·
+  <a href="#for-developers">For Developers</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white" alt="Android 8+" />
+  <img src="https://img.shields.io/badge/Kotlin-2B2D42?logo=kotlin" alt="Kotlin" />
+  <img src="https://img.shields.io/badge/Jetpack%20Compose-2024-4285F4" alt="Jetpack Compose" />
+  <img src="https://img.shields.io/badge/Home%20Widgets-6%20Included-111827" alt="6 widgets" />
+</p>
+
+---
+
+## Install In 60 Seconds
+
+Use this on your Android phone:
+
+- **[Download APK (v1.0.0)](https://github.com/abhiasawa/Left/raw/main/downloads/TimeLeft-v1.0.0-debug.apk)**
+
+Quick steps:
+
+1. Tap the APK link and download.
+2. Open it from the Downloads app.
+3. Allow install permission if Android asks.
+4. Tap **Install**.
+
+APK file in repo:
+
+- [downloads/TimeLeft-v1.0.0-debug.apk](downloads/TimeLeft-v1.0.0-debug.apk)
+
+---
+
+## Why People Love Left
+
+- **Instant clarity**: understand time at a glance without charts or clutter
+- **Visual-first design**: progress is represented as dots, rings, and barcodes
+- **Homescreen friendly**: widgets keep time awareness visible all day
+- **Deeply personal**: customize symbols, themes, active hours, and countdowns
 
 Inspired by Tim Urban's "Your Life in Weeks" and [Left - Widgets for Time Left](https://apps.apple.com/app/left-days-of-the-year/id1533146565).
 
-## Why Left
+---
 
-- Visual over numeric: no clutter, no charts, no spreadsheets
-- Fast daily check-in: open app or glance at widgets
-- Personal and customizable: symbols, colors, active hours, countdowns
-- Built for homescreen habits: widgets that update and deep-link into the app
+## Screenshots
 
-## App Preview
+<p align="center">
+  <img src="screenshots/app-preview-grid.png" width="760" alt="Left app preview grid" />
+</p>
 
-| Year | Life |
-|---|---|
-| ![Year view](screenshots/app-year.png) | ![Life view](screenshots/app-life.png) |
+---
 
-| Month | Week |
-|---|---|
-| ![Month view](screenshots/app-month.png) | ![Week view](screenshots/app-week.png) |
+## Widgets
 
-## Widget Preview
+<p align="center">
+  <img src="screenshots/widgets-full-set.png" width="760" alt="Left widgets full set" />
+</p>
 
-| Year Progress (2x2) | Month Progress (2x2) |
-|---|---|
-| ![Year widget](screenshots/widget-year-progress.png) | ![Month widget](screenshots/widget-month-progress.png) |
+Included widgets:
 
-| Life Progress (2x2) | Countdown (2x2) |
-|---|---|
-| ![Life widget](screenshots/widget-life-progress.png) | ![Countdown widget](screenshots/widget-countdown.png) |
+- Year Progress (2x2)
+- Year Barcode (4x2)
+- Month Progress (2x2)
+- Life Progress (2x2)
+- Countdown (2x2)
+- Day / Hour (2x2)
 
-| Day / Hour (2x2) | Year Barcode (4x2) |
-|---|---|
-| ![Day hour widget](screenshots/widget-day-hour.png) | ![Year barcode widget](screenshots/widget-year-barcode.png) |
+---
 
-Also included as share-ready collages:
+## Core Product Features
 
-- ![Widgets overview](screenshots/widgets-overview.png)
-- ![Widgets full set](screenshots/widgets-full-set.png)
+- Life / Year / Month / Week / Day / Hour timelines
+- Real-time "current moment" indicator
+- Smooth swipe navigation across time units
+- 7 symbol styles: dot, star, heart, hexagon, square, diamond, number
+- Custom elapsed / remaining / current colors
+- Snapshot sharing
+- Daily reminders with milestone detection
+- Configurable wake/sleep windows
 
-## Install Directly On Android (No Build Needed)
+---
 
-Tap this link from your Android phone:
-
-- [Download TimeLeft APK (v1.0.0)](https://github.com/abhiasawa/Left/raw/main/downloads/TimeLeft-v1.0.0-debug.apk)
-
-Install steps:
-
-1. Download the APK.
-2. Open it from the Downloads app.
-3. If prompted, allow installs from your browser/files app.
-4. Tap Install.
-
-## Build From Source (Optional)
+## For Developers
 
 ```bash
 ./gradlew :app:installDebug
 ```
 
-Or build the APK only:
+Build APK only:
 
 ```bash
 ./gradlew :app:assembleDebug
 ```
 
-## Core Product Features
-
-- Life/year/month/week/day/hour visual timelines
-- Real-time "current moment" marker
-- Swipe between time units
-- 7 symbol styles (dot, star, heart, hexagon, square, diamond, number)
-- Custom color themes for elapsed/remaining/current indicators
-- Share snapshots
-- Daily reminders + milestone detection
-- Configurable wake/sleep window for day/hour views
-
-## Tech Stack
+Tech stack:
 
 - Kotlin + Jetpack Compose + Material 3
 - Glance AppWidget
@@ -86,7 +113,7 @@ Or build the APK only:
 - WorkManager
 - Min SDK 26 / Target SDK 34
 
-## Project Structure
+Project structure:
 
 ```text
 app/src/main/java/com/timeleft/
