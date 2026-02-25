@@ -1,83 +1,125 @@
-# Left - Time Left Visualizer
+# Left (TimeLeft)
 
-An Android app that visualizes time passing through purely visual dot grids, circular rings, and barcodes. Track how much of the year, month, week, day, hour, or your life has elapsed — and how much remains. No numbers, no labels — the visualization IS the interface.
+Left is a visual-first Android app for people who want to *feel* time passing, not just read numbers.
 
-Inspired by Tim Urban's "Your Life in Weeks" and the iOS app [Left - Widgets for Time Left](https://apps.apple.com/app/left-days-of-the-year/id1533146565).
+Track your life, year, month, week, day, and hour with clean dot-based visuals and home screen widgets.
 
-## Features
+Inspired by Tim Urban's "Your Life in Weeks" and [Left - Widgets for Time Left](https://apps.apple.com/app/left-days-of-the-year/id1533146565).
 
-### Visualizations
+## Why Left
 
-Each time scale has a purpose-built, purely visual representation:
+- Visual over numeric: no clutter, no charts, no spreadsheets
+- Fast daily check-in: open app or glance at widgets
+- Personal and customizable: symbols, colors, active hours, countdowns
+- Built for homescreen habits: widgets that update and deep-link into the app
 
-- **Life** — Tim Urban-style grid: 52 columns (weeks) × rows (years). One dot = one week of your life.
-- **Year** — Adaptive dot grid filling the screen. One dot per day of the year.
-- **Month** — 7-column dot grid matching calendar layout with day-of-week offset. Reads as a familiar calendar shape without any text.
-- **Week** — 7 large dots in a horizontal row. Universally recognizable as a week.
-- **Day** — Circular ring of dots (one per active hour). Every 6th dot is a larger quadrant marker.
-- **Hour** — 60 dots arranged in a clock-face circle. One dot per minute.
+## App Preview
 
-Elapsed time is dimmed, the current moment pulses red, remaining time is bright. Swipe horizontally to switch between scales.
+| Year | Life |
+|---|---|
+| ![Year view](screenshots/app-year.png) | ![Life view](screenshots/app-life.png) |
 
-### Home Screen Widgets
+| Month | Week |
+|---|---|
+| ![Month view](screenshots/app-month.png) | ![Week view](screenshots/app-week.png) |
 
-6 Glance-based widgets with dark backgrounds and click-to-open:
+## Social Poster (Instagram)
 
-| Widget | Size | Description |
-|--------|------|-------------|
-| Year Progress | 2×2 | Dot grid of days in the year |
-| Year Barcode | 4×2 | Barcode-style year visualization |
-| Month Progress | 2×2 | Dot grid of days in the month |
-| Life Progress | 2×2 | Dot grid of weeks in your life |
-| Countdown | 2×2 | Ring progress for next countdown |
-| Day/Hour | 2×2 | Dot grid of hours in the day |
+![Instagram Poster](screenshots/social-poster-instagram-1080x1350.png)
 
-Tapping any widget opens the app directly to the relevant time scale.
+## Widget Preview
 
-### Other
+| Year Progress (2x2) | Month Progress (2x2) |
+|---|---|
+| ![Year widget](screenshots/widget-year-progress.png) | ![Month widget](screenshots/widget-month-progress.png) |
 
-- 7 symbol types (dot, star, heart, hexagon, square, diamond, number)
-- Custom color theming for elapsed, remaining, and current indicator
-- Share progress as images
-- Daily summary notifications with milestone detection
-- Configurable active hours (wake/sleep)
+| Life Progress (2x2) | Countdown (2x2) |
+|---|---|
+| ![Life widget](screenshots/widget-life-progress.png) | ![Countdown widget](screenshots/widget-countdown.png) |
+
+| Day / Hour (2x2) | Year Barcode (4x2) |
+|---|---|
+| ![Day hour widget](screenshots/widget-day-hour.png) | ![Year barcode widget](screenshots/widget-year-barcode.png) |
+
+Also included as share-ready collages:
+
+- ![Widgets overview](screenshots/widgets-overview.png)
+- ![Widgets full set](screenshots/widgets-full-set.png)
+
+## Install In 2 Minutes (Recommended)
+
+### Requirements
+
+- Android Studio (Ladybug/Hedgehog+)
+- Android SDK + Platform Tools
+- JDK 17
+- Android device or emulator (API 26+)
+
+### One-command install (device/emulator connected)
+
+```bash
+./gradlew :app:installDebug
+```
+
+This command builds and installs the app directly to your connected Android device/emulator.
+
+## Build APK
+
+```bash
+./gradlew :app:assembleDebug
+```
+
+APK output:
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+Install manually:
+
+```bash
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+## Run From Android Studio
+
+1. Open this folder in Android Studio.
+2. Let Gradle sync.
+3. Select an emulator/device.
+4. Click **Run**.
+
+## Core Product Features
+
+- Life/year/month/week/day/hour visual timelines
+- Real-time "current moment" marker
+- Swipe between time units
+- 7 symbol styles (dot, star, heart, hexagon, square, diamond, number)
+- Custom color themes for elapsed/remaining/current indicators
+- Share snapshots
+- Daily reminders + milestone detection
+- Configurable wake/sleep window for day/hour views
 
 ## Tech Stack
 
-- **UI**: Jetpack Compose + Material 3 + Canvas drawing
-- **Widgets**: Glance AppWidget framework
-- **Preferences**: DataStore
-- **Background**: WorkManager (widget updates, notifications)
-- **Min SDK**: 26 (Android 8.0)
-- **Language**: Kotlin
+- Kotlin + Jetpack Compose + Material 3
+- Glance AppWidget
+- Room + DataStore
+- WorkManager
+- Min SDK 26 / Target SDK 34
 
 ## Project Structure
 
-```
+```text
 app/src/main/java/com/timeleft/
 ├── data/
-│   ├── preferences/         # DataStore user preferences
-│   └── repository/          # Data repository
 ├── domain/
-│   └── models/              # TimeUnit, SymbolType
-├── navigation/              # NavHost routing
+├── navigation/
 ├── ui/
-│   ├── components/          # DotGrid, DayGrid, WeekView, MonthCalendar,
-│   │                        # HourClock, TimeSelector
-│   ├── screens/             # LeftScreen (main visualization)
-│   ├── settings/            # Settings bottom sheet
-│   └── theme/               # Colors, typography, theme
-├── util/                    # TimeCalculations, ShareHelper
-├── widgets/                 # 6 Glance widgets + WidgetRenderer
+├── util/
+├── widgets/
 ├── MainActivity.kt
 └── TimeLeftApplication.kt
 ```
-
-## Building
-
-1. Open the project in Android Studio (Hedgehog or newer)
-2. Sync Gradle
-3. Run on a device/emulator with API 26+
 
 ## License
 
